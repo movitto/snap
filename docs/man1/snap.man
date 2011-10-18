@@ -1,0 +1,44 @@
+.TH SNAP "1" "December 2007" "Snap Version 0.1" "User Commands"
+.SH NAME
+Snap \- manual page for Snap Version 0.1
+.SH DESCRIPTION
+snap is a utility which backups and restores your system through the use of package and file system snapshots
+.SH SYNOPSIS
+.B snaptool.py
+[\fIoptions\fR] \fIarg\fR
+.PP
+.B gsnap.py 
+.SH OPTIONS
+.TP
+\fB\-\-version\fR
+show program's version number and exit
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-restore\fR
+Restore a snapshot. NOTE you must specify a snapfile when restoring
+.TP
+\fB\-\-backup\fR
+Take a snapshot
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Verbose output
+.TP
+\fB\-f\fR SNAPFILE, \fB\-\-snapfile\fR=\fISNAPFILE\fR
+Location of the Snapshot file
+.TP
+\fB\-\-files\fR
+Include file processing when backing up/restoring system
+.TP
+\fB\-\-nofiles\fR
+Exclude file processing
+.TP
+\fB\-i\fR INCLUDE, \fB\-\-include\fR=\fIINCLUDE\fR
+":" seperated Include paths
+.TP
+\fB\-e\fR EXCLUDE, \fB\-\-exclude\fR=\fIEXCLUDE\fR
+":" seperated Exclude paths
+.SH "SEE ALSO"
+.B /etc/snap.conf
+\- The snap configuration file

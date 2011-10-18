@@ -1,0 +1,15 @@
+TODO:
+ --includefiles --excludefiles - include/exclude specific files in restoring/backingup
+ Additional package management system support (aptget, portage, swaret, etc.)
+ Additional GUI interfaces (kde, xfce)
+
+ Internationalize text
+ Support selecting packages to install / backup
+
+ DBUS interface
+ Communicate w/ remote server
+ Incremental snapshots
+ "Incompattible" files
+ Snap partition from which snapshots can be saved to / restored from
+ Package management system can specify addition metadata to be included in instances of SFile, Package, SnapFile(?)
+    and additional operations to perform when generating / parsing record files

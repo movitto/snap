@@ -1,0 +1,96 @@
+#!/usr/bin/python
+#
+# snap - system snapshot and restoration utility
+#  Uses the underlying package system and incremental
+#  backup tools to take system snapshots which can be
+#  restored at a later time
+#
+# Version: 0.1
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# (C) Copyright 2007 Mohammed Morsi (movitto@yahoo.com)
+
+import sys
+
+import snap
+from snap.exceptions import *
+from snap.configmanager import ConfigManager
+
+class ConsoleCallback(snap.callback.SnapCallbackBase):
+    def __init__(self, verbose=False):
+        self.verbose=verbose
+
+    def warn(self, warning):
+        print 'WARNING: ' + warning
+    def error(self, error):
+        print 'ERROR: ' + error
+
+    def init_backup(self):
+        print "Creating Snapshot"
+    def backup_packages(self):
+        print " Backing up packages"
+    def backup_package(self, package):
+        if self.verbose:
+            print "  Backing up package " + package.name
+    def backup_files(self):
+        print " Backing up files"
+    def backup_file(self, file):
+        if self.verbose:
+            print "  Backing up file " + file.currentpath
+    def snapfile_created(self, snapfile):
+        print " Snapfile " + snapfile.snapfile + " created"
+    def post_backup(self):
+        print "Snapshot completed"
+
+    def init_restore(self):
+        print "Restoring snapshot"
+    def restore_packages(self):
+        print " Restoring packages (this may take a while)"
+    def restore_package(self, package):
+        if self.verbose:
+            print "   Restoring package " + package.name
+    def restore_files(self):
+        print " Restoring files"
+    def restore_file(self, file):
+        if self.verbose:
+            print "   Restoring file " + file.currentpath
+    def snapfile_restored(self, snapfile):
+        print " Snapfile " + snapfile.snapfile + " restored"
+    def post_restore(self):
+        print "Restore completed"
+
+def main():
+    snap.callback.snapcallback=ConsoleCallback()
+    try:
+        snapbase = snap.SnapBase()
+        cm = ConfigManager(snapbase.options)
+        cm.read_config()
+
+        cm.parse_cli()
+        cm.verify_integrity()
+
+        snap.callback.snapcallback.verbose=snapbase.options.verbose
+
+        if snapbase.options.mode == snapbase.options.RESTORE:
+            snapbase.restore()
+            return 0
+        if snapbase.options.mode == snapbase.options.BACKUP:
+            snapbase.backup()
+            return 0
+
+        return 1
+
+    except (SnapArgError, SnapInsufficientPermissionError, SnapPackageSystemError, SnapFilesystemError), e:
+        return 1
+
+if __name__ == "__main__":
+    sys.exit(main())

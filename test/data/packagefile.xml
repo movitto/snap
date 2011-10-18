@@ -1,0 +1,5 @@
+<packages>
+    <package><name>apache</name></package>
+    <package><name>mysql</name></package>
+    <package><name>kernel</name></package>
+</packages>

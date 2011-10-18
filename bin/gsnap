@@ -1,0 +1,181 @@
+#!/usr/bin/python
+#
+# gsnap - snap gtk gui
+#
+# Version: 0.1
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# (C) Copyright 2007 Mohammed Morsi (movitto@yahoo.com)
+
+import sys
+import threading
+
+GLADE_FILE="/usr/share/snap/snap.glade"
+
+import snap
+from snap.exceptions import *
+from snap.configmanager import ConfigManager
+
+try:
+    import pygtk
+    pygtk.require("2.0")
+except:
+    pass
+try:
+    import gtk
+    import gtk.glade
+except:
+     sys.exit(1)
+
+# The main window
+class GSnap:
+     def __init__(self):
+        self.wTree = gtk.glade.XML(GLADE_FILE, "mainwindow") 
+                                         
+        # map the gui signals
+        dic = { "on_startbutton_clicked"   : self.startbutton_clicked,
+                "on_closebutton_clicked"  : gtk.main_quit,
+                "on_mainwindow_destroy"   : gtk.main_quit }
+        self.wTree.signal_autoconnect(dic)
+
+     def startbutton_clicked(self, widget):
+        snap.callback.snapcallback=GSnapCallback(self.wTree.get_widget("outputtextview").get_buffer())
+        self.snapbase = snap.SnapBase()
+        dlg = GSnapOptionsDialog(self.snapbase.options)
+        if dlg.run():
+            snap.callback.snapcallback.verbose=self.snapbase.options.verbose
+            threading.Thread(target=self.run).start()
+
+    # Used to run the principle operations in a seperate thread
+    #  so as to not tie up the GUI Draw operations
+     def run(self):
+        try:
+            if self.snapbase.options.mode == self.snapbase.options.RESTORE:
+                self.snapbase.restore()
+            if self.snapbase.options.mode == self.snapbase.options.BACKUP:
+                self.snapbase.backup()
+        except (SnapInsufficientPermissionError, SnapPackageSystemError, SnapFilesystemError), e:
+            print 'Fatal error'
+
+
+
+# Options dialog
+class GSnapOptionsDialog:
+    def __init__(self, configoptions):
+        self.wTree = gtk.glade.XML(GLADE_FILE, "optionsdialog")
+        dic = { "on_handlefilescheckbox_clicked" : self.handlefiles_toggle,
+                "on_selectfilebutton_clicked"    : self.selectfile_clicked }
+        self.wTree.signal_autoconnect(dic)
+
+        self.dlg = self.wTree.get_widget("optionsdialog")
+        self.configoptions = configoptions
+
+    def handlefiles_toggle(self, widget):
+        self.wTree.get_widget("includedirstext").set_editable(not self.wTree.get_widget("includedirstext").get_editable())
+        self.wTree.get_widget("excludedirstext").set_editable(not self.wTree.get_widget("excludedirstext").get_editable())
+
+    def selectfile_clicked(self, widget):
+        file_open = gtk.FileChooserDialog(title="Select Snapfile", action=gtk.FILE_CHOOSER_ACTION_OPEN, 
+                                          buttons=(gtk.STOCK_CANCEL , gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        if file_open.run() == gtk.RESPONSE_OK:
+            result = file_open.get_filename()
+            self.wTree.get_widget("snapfiletext").set_text(result)
+
+        file_open.destroy()
+
+    def _set_options(self):
+        if self.wTree.get_widget("restoreradio").get_active():
+            self.configoptions.mode = self.configoptions.RESTORE
+        if self.wTree.get_widget("snapshotradio").get_active():
+            self.configoptions.mode = self.configoptions.BACKUP
+        if self.wTree.get_widget("snapfiletext").get_text() != None and self.wTree.get_widget("snapfiletext").get_text() != "":
+            self.configoptions.snapfile = self.wTree.get_widget("snapfiletext").get_text()
+        self.configoptions.verbose = self.wTree.get_widget("verbosecheckbox").get_active()
+        self.configoptions.handlefiles = self.wTree.get_widget("handlefilescheckbox").get_active()
+        if self.configoptions.handlefiles:
+            self.configoptions.include = self.wTree.get_widget("includedirstext").get_text()
+            self.configoptions.exclude = self.wTree.get_widget("excludedirstext").get_text()
+
+    def run(self):
+        result=False
+
+        try:
+            if gtk.RESPONSE_OK == self.dlg.run():
+                cm = ConfigManager(self.configoptions)
+                cm.read_config()
+                self._set_options()
+                cm.verify_integrity()
+                result = True
+        except SnapArgError, e:
+            print 'Fatal error'
+
+    
+        self.dlg.destroy()
+        return result
+
+# Redirect callback text to main window
+class GSnapCallback(snap.callback.SnapCallbackBase):
+    def __init__(self, outputbuffer, verbose=False):
+        self.outputbuffer = outputbuffer
+        self.verbose = verbose
+
+    def _append_to_buffer(self, newtext):
+        gtk.gdk.threads_enter()
+        nl = ''
+        if self.outputbuffer.get_char_count() != 0:
+            nl = '\n'
+        self.outputbuffer.insert(self.outputbuffer.get_end_iter(), nl + newtext)
+        gtk.gdk.threads_leave()
+
+    def warn(self, warning):
+        self._append_to_buffer("WARNING: " + warning)
+    def error(self, error):
+        self._append_to_buffer("ERROR: " + error)
+
+    def init_backup(self):
+        self._append_to_buffer("Creating Snapshot")
+    def backup_packages(self):
+        self._append_to_buffer(" Backing up packages")
+    def backup_package(self, package):
+        if self.verbose:
+            self._append_to_buffer("  Backing up package " + package.name)
+    def backup_files(self):
+        self._append_to_buffer(" Backing up files")
+    def backup_file(self, file):
+        if self.verbose:
+            self._append_to_buffer("  Backing up file " + file.currentpath)
+    def snapfile_created(self, snapfile):
+        self._append_to_buffer(" Snapfile " + snapfile.snapfile + " created")
+    def post_backup(self):
+        self._append_to_buffer("Snapshot completed")
+
+    def init_restore(self):
+        self._append_to_buffer("Restoring snapshot")
+    def restore_packages(self):
+        self._append_to_buffer(" Restoring up packages....")
+    def restore_package(self, package):
+        if self.verbose:
+            self._append_to_buffer("  Restoring package " + package.name)
+    def restore_files(self):
+        self._append_to_buffer(" Restoring files")
+    def restore_file(self, file):
+        if self.verbose:
+            self._append_to_buffer("  Restoring file " + file.currentpath)
+    def snapfile_restored(self, snapfile):
+        self._append_to_buffer(" Snapfile " + snapfile.snapfile + " restored")
+    def post_restore(self):
+        self._append_to_buffer("Restore completed")
+
+if __name__ == "__main__":
+    hwg = GSnap()
+    gtk.gdk.threads_init()
+    gtk.main()

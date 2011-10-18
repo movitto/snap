@@ -1,0 +1,27 @@
+[About]
+ Snap is a python utility to take and restore system snapshots. 
+ Included is the python snap library; two executables, snaptool 
+ for the command line and gsnap for GTK; and the documentation.
+
+[Installing]
+ 'make install' - its that easy
+
+[Running]
+ 'man snap' or 'snaptool --help' for all available options
+ snaptool --backup --verbose
+ snaptool --restore --snapfile /tmp/snap-12.06.2007-23.57.54.tgz --verbose
+ gsnap
+
+[Package Systems]
+ To write a plugin to snap for your package system (call it Pkgms) add a file
+ called PkgmsPluginSystem.py to PACKAGE_SYSTEMS_DIR as defined in 
+ snap/snapoptions.py. In this file, derive a class called PkgmsPluginSystem from
+ snap.packagesystem.PackageSystemBase and override ALL the methods. 
+ Set the "packagesystem" option in the snap config file snap.conf to "pkgms",
+ and lastly add your package module to the setup.py installer script
+
+[change-log]
+ Version 0.1 - 12/17/07
+  Initial version!
+  Contributers:
+    Mohammed Morsi - movitto@yahoo.com
