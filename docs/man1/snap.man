@@ -1,6 +1,6 @@
-.TH SNAP "1" "December 2007" "Snap Version 0.1" "User Commands"
+.TH SNAP "1" "December 2011" "Snap Version 0.5" "User Commands"
 .SH NAME
-Snap \- manual page for Snap Version 0.1
+Snap \- manual page for Snap Version 0.5
 .SH DESCRIPTION
 snap is a utility which backups and restores your system through the use of package and file system snapshots
 .SH SYNOPSIS
