@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # base interface for snap callback system
 #
-# (C) Copyright 2007 Mohammed Morsi (movitto@yahoo.com)
+# (C) Copyright 2011 Mo Morsi (mo@morsi.org)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,13 +14,16 @@
 # GNU General Public License for more details.
 #
 
-class SnapCallbackBase:
-    """This is the base class for the snap callback system through
-       which snap updates a client as to the progress of its operations
-       This class should be inherited and the following methods overridden 
-       by clients who will handle the callback messages in their own means"""
+class Callback:
+    """Base callback interface through which snap informs clients of progress"""
     
-    verbose=False
+    def message(self, msg):
+        '''
+        a generic message
+
+        @param - the string message
+        '''
+        pass
 
     def warn(self, warning):
         '''
@@ -44,39 +47,11 @@ class SnapCallbackBase:
         '''
         pass
 
-    def backup_packages(self):
+    def backup_target(self, target):
         '''
-        starting to backup packages
-        '''
-        pass
+        starting to backup the specified target
 
-    def backup_package(self, package):
-        '''
-        backed up a package
-
-        @param - the snap.packages.Package that was backed up
-        '''
-        pass
-        
-    def backup_files(self):
-        '''
-        starting to backup files
-        '''
-        pass
-
-    def backup_file(self, file):
-        '''
-        backed up a file
-
-        @param - the snap.files.SFile that was backed up
-        '''
-        pass
-
-    def snapfile_created(self, snapfile):
-        '''
-        created snapfile tarball
-
-        @param - the snap.files.SnapFile created
+        @param - the string target being backed up
         '''
         pass
 
@@ -92,39 +67,11 @@ class SnapCallbackBase:
         '''
         pass
         
-    def restore_packages(self):
+    def restore_target(self, target):
         '''
         starting to backup packages
-        '''
-        pass
 
-    def restore_package(self, package):
-        '''
-        restored a package
-        
-        @param - the snap.packages.Package that was restored
-        '''
-        pass
-
-    def restore_files(self):
-        '''
-        starting to restore files
-        '''
-        pass
-
-    def restore_file(self, file):
-        '''
-        restored a file
-
-        @param - the snap.files.SFile that was restored
-        '''
-        pass
-        
-    def snapfile_restored(self, snapfile):
-        '''
-        restored snapfile tarball
-
-        @param - the snap.files.SnapFile restored
+        @param - the string target being backed up
         '''
         pass
 
@@ -134,6 +81,5 @@ class SnapCallbackBase:
         '''
         pass
 
-
-# assign this to your SnapCallbackBase-derivce callback to hookup the callback system
+# assign this to your SnapCallbackBase-derived callback to hookup the callback system
 snapcallback=SnapCallbackBase()

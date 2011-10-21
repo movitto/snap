@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# snap - a utility for system backup and restoration
+# High level OS helpers
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)
 #
@@ -14,15 +14,20 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-from distutils.core import setup
+from snap.files import FileManager
 
-setup(name = 'snap',
-	version='0.1',
-	description = 'system snapshotter and restoration utility',
-	author = 'Mohammed Morsi',
-	author_email = 'mmorsi@yahoo.com',
-	url = 'http://morsi.org/projects/snap',
-	packages = ['snap'],
-	data_files = [("/etc", ["resources/snap.conf"]), 
-			('/usr/share/snap/', ['resources/snap.glade']),
-	scripts = ["bin/snaptool", "bin/gsnap"] )
+class OS:
+
+  def lookup():
+    '''lookup and return the current operating system we are running as'''
+    # TODO other operating system checks
+    if FileManager.exists('/etc/fedora-release')
+      return 'fedora'
+    elif FileManager.exists('C:\\')
+      return 'windows'
+    return None
+  lookup=staticmethod(lookup)
+
+  def default_backend_for_target(os, target):
+    return DEFAULT_BACKENDS[os][target]
+  default_backend_for_target = staticmethod(default_backend_for_target)

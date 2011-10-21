@@ -1,8 +1,8 @@
 #!/usr/bin/python
 #
-# snap base class and interface
+# Snap! base class and interface
 #
-# (C) Copyright 2007 Mohammed Morsi (movitto@yahoo.com)
+# (C) Copyright 2011 Mo Morsi (mo@morsi.org)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,15 +14,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-import os    # to save/restore the initial cwd
-import time  # to generate snapfile name incorporating current time
+import os
+import time
 
 import snap
-from snap.exceptions import *
-from snap.files import FileManager,SnapFile
-from snap.packages import PackageFile
-from snap.configmanager import ConfigOptions
-from snap.packagesystemadaptor import SnapPackageSystemAdaptor
+from snap.exceptions        import InsufficientPermissionError
+from snap.filesmanager      import FileManager
+from snap.metadata.snapfile import SnapFile
+from snap.configmanager     import ConfigOptions
 
 class SnapBase:
     # configuration options
@@ -34,72 +33,76 @@ class SnapBase:
     # temp directory used to construct tarball 
     construct_dir = None
 
-    # saved cwd
-    cwd = None
-
     def __init__(self):
         '''initialize snap '''
 
         self.options = ConfigOptions()
         self.current_time = time.strftime('%m.%d.%Y-%H.%M.%S') 
         self.construct_dir = '/tmp/snap-' + self.current_time
-        self.cwd = os.getcwd()
+
+    def load_backends(self):
+        '''
+        Initialize the default backends for the targets with the give names.
+        The default backends for the local os will be retrieved and the
+        corresponding modules will be loaded out of the backends subdirectories
+        and target classes instantiated and returned
+        '''
+        backends = []
+
+        os = OS.lookup()
+        for target in self.options.target_backends.keys():
+            backend = OS.default_backend_for_target(os, target)
+            self.options.target_backends[target] = backend
+
+            # Dynamically load the module
+            backend_file = os.path.dirname(__file__) + '/backends/' + target + '/' + backend + '.py'
+            module_name, ext = os.path.splitext(backend_file)
+            module_location = imp.find_module(module_name)
+            module = imp.load_module(module_name, *module_location)
+            globals()[module_name] = module
+
+            # Dynamically instantiate the class
+            classobj = eval(module_name + '.' + backend.capitalize())
+            backends.append(classobj())
+
+        return backends
+
 
     def check_permission(self):
+        '''
+        ensure current user has permissions to run Snap!
+
+        @raises InsufficientPermissionError - if an error occurs when backing up the files
+        '''
         if os.geteuid() != 0:
             snap.callback.snapcallback.error("Must be root to run this program")
-            raise SnapInsufficientPermissionError
+            raise InsufficientPermissionError
 
     def backup(self, installed_packages = None):
         '''
         peform the backup operation, recording installed packages and copying new/modified files
-
-        @param installed_packages - optional list of snap.packages.Package to install
-        @raises SnapPackageSystemError - if an error occurs when backing up the packages
-        @raises SnapFileSystemError - if an error occurs when backing up the files
         '''
         self.check_permission()
         snap.callback.snapcallback.init_backup()
         FileManager.make_dir(self.construct_dir)
-        psa = SnapPackageSystemAdaptor(self.options.packagesystem)
-
-        if self.options.handlepackages:
-            if installed_packages == None:
-                installed_packages = psa.get_installed_packages()
-            PackageFile(self.construct_dir + '/packages.xml').write(installed_packages)
-            psa.backup(self.construct_dir) 
-
-        if self.options.handlefiles:
-            dir = '/'
-            if self.options.include != None and self.options.include != '':
-                dir = self.options.include
-            files = FileManager.get_all_files(dir, self.options.exclude, psa)
-            FileManager(self.construct_dir + '/files.xml', self.construct_dir).backup(files)
+        backends = self.load_backends()
+        for backend in backends:
+          backend.backup(self.construct_dir) # FIXME include/exclude targets support
 
         SnapFile(self.options.snapfile + '-' + self.current_time + '.tgz', self.construct_dir).compress()
         snap.callback.snapcallback.post_backup()
-        os.chdir(self.cwd)
 
     def restore(self):
         '''
         perform the restore operation, restoring packages and files recorded
-
-        @raises SnapPackageSystemError - if an error occurs when restoring the packages
-        @raises SnapFileSystemError - if an error occurs when restoring the files
         '''
         self.check_permission()
         snap.callback.snapcallback.init_restore()
         FileManager.make_dir(self.construct_dir)
-        psa = SnapPackageSystemAdaptor(self.options.packagesystem)
+        backends = self.load_backends()
         SnapFile(self.options.snapfile, self.construct_dir).extract()
 
-        if self.options.handlepackages:
-        	psa.restore(self.construct_dir) 
-        	installed_packages = PackageFile(self.construct_dir + '/packages.xml').read()
-        	psa.install_packages(installed_packages)
-
-        if self.options.handlefiles:
-            FileManager(self.construct_dir + '/files.xml', self.construct_dir).restore()
+        for backend in backends:
+          backend.restore(self.construct_dir)
 
         snap.callback.snapcallback.post_restore()
-        os.chdir(self.cwd)

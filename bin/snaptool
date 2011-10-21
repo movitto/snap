@@ -1,11 +1,8 @@
 #!/usr/bin/python
 #
-# snap - system snapshot and restoration utility
-#  Uses the underlying package system and incremental
-#  backup tools to take system snapshots which can be
-#  restored at a later time
+# Snap! command line interface
 #
-# Version: 0.1
+# (C) Copyright 2011 Mo Morsi (mo@morsi.org)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,19 +13,16 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
-# (C) Copyright 2007 Mohammed Morsi (movitto@yahoo.com)
 
 import sys
-
 import snap
-from snap.exceptions import *
-from snap.configmanager import ConfigManager
 
 class ConsoleCallback(snap.callback.SnapCallbackBase):
-    def __init__(self, verbose=False):
+    def __init__(self)
         self.verbose=verbose
 
+    def message(self, msg):
+        print msg
     def warn(self, warning):
         print 'WARNING: ' + warning
     def error(self, error):
@@ -36,35 +30,15 @@ class ConsoleCallback(snap.callback.SnapCallbackBase):
 
     def init_backup(self):
         print "Creating Snapshot"
-    def backup_packages(self):
-        print " Backing up packages"
-    def backup_package(self, package):
-        if self.verbose:
-            print "  Backing up package " + package.name
-    def backup_files(self):
-        print " Backing up files"
-    def backup_file(self, file):
-        if self.verbose:
-            print "  Backing up file " + file.currentpath
-    def snapfile_created(self, snapfile):
-        print " Snapfile " + snapfile.snapfile + " created"
+    def backup_target(self, target):
+        print " Backing up " + target
     def post_backup(self):
         print "Snapshot completed"
 
     def init_restore(self):
         print "Restoring snapshot"
-    def restore_packages(self):
-        print " Restoring packages (this may take a while)"
-    def restore_package(self, package):
-        if self.verbose:
-            print "   Restoring package " + package.name
-    def restore_files(self):
-        print " Restoring files"
-    def restore_file(self, file):
-        if self.verbose:
-            print "   Restoring file " + file.currentpath
-    def snapfile_restored(self, snapfile):
-        print " Snapfile " + snapfile.snapfile + " restored"
+    def restore_target(self, target):
+        print " Restoring " + target
     def post_restore(self):
         print "Restore completed"
 
@@ -72,13 +46,11 @@ def main():
     snap.callback.snapcallback=ConsoleCallback()
     try:
         snapbase = snap.SnapBase()
-        cm = ConfigManager(snapbase.options)
-        cm.read_config()
 
-        cm.parse_cli()
-        cm.verify_integrity()
-
-        snap.callback.snapcallback.verbose=snapbase.options.verbose
+        conf = snap.configmanager.Config(snapbase.options)
+        conf.read_config()
+        conf.parse_cli()
+        conf.verify()
 
         if snapbase.options.mode == snapbase.options.RESTORE:
             snapbase.restore()
@@ -89,7 +61,7 @@ def main():
 
         return 1
 
-    except (SnapArgError, SnapInsufficientPermissionError, SnapPackageSystemError, SnapFilesystemError), e:
+    except (snap.exceptions.SnapError), e:
         return 1
 
 if __name__ == "__main__":
