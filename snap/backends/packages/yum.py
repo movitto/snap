@@ -23,11 +23,16 @@ class Yum(snap.Target):
 
     def backup(self, basedir, include=[], exclude=[]):
         '''backup the packages installed locally'''
+        if snap.config.options.log_level_at_least('verbose'):
+            snap.callback.snapcallback.message("Backing up packages using yum backend");
+
         # retrieve installed packages
         packages=[]
         packagenames = Set()
         for pkg in self.yum.rpmdb:
             if not pkg.name in packagenames:
+                if snap.config.options.log_level_at_least('verbose'):
+                    snap.callback.snapcallback.message("Backing up package " + pkg.name);
                 packagenames.add(pkg.name)
                 packages.append(Package(pkg.name, pkg.version))
 
@@ -37,6 +42,9 @@ class Yum(snap.Target):
 
     def restore(self, basedir):
         '''restore the packages from the snapfile'''
+        if snap.config.options.log_level_at_least('verbose'):
+            snap.callback.snapcallback.message("Restoring packages using yum backend");
+
         # first update the system
         for pkg in self.yum.rpmdb:
             self.yum.update(pkg)
@@ -88,6 +96,8 @@ class Yum(snap.Target):
         packagenames = []
         kmods = []
         for pkg in packages:
+            if snap.config.options.log_level_at_least('verbose'):
+                snap.callback.snapcallback.message("Restoring package " + pkg.name);
             if re.match(r'kmod*', pkg.name.rstrip()) != None:
                 kmods.append(pkg.name)
             elif pkg.name.rstrip() != 'kernel':

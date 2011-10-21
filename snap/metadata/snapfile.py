@@ -67,6 +67,9 @@ class SnapFile:
         # finish up tarball creation
         tarball.close()
 
+        if snap.config.options.log_level_at_least('normal'):
+            snap.callback.snapcallback.message("Snapfile " + tarball_path + " created")
+
     def extract(self):
         '''extract the snapfile into the snapdirectory
         
@@ -82,3 +85,6 @@ class SnapFile:
 
         # close it out
         tarball.close()
+
+        if snap.config.options.log_level_at_least('normal'):
+            snap.callback.snapcallback.message("Snapfile " + tarball_path + " restored")

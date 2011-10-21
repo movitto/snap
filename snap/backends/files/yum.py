@@ -42,12 +42,17 @@ class Yum(snap.Target):
     def backup(self, basedir, include=['/'], exclude=[]):
         """backup the files modified outside the yum package system"""
 
+        if snap.config.options.log_level_at_least('verbose'):
+            snap.callback.snapcallback.message("Backing up files using yum backend");
+
         # determine which files have been modified since installation
         #   and copy those to basedir
         sfiles = []
         files = FileManager.get_all_files(include, exclude)
         for tfile in files:
             if self.file_modified(tfile):
+                if snap.config.options.log_level_at_least('verbose'):
+                    snap.callback.snapcallback.message("Backing up file " + tfile);
                 sfile = SFile(tfile)
                 sfile.copy_to(basedir)
                 sfiles.append(sfile)
@@ -59,10 +64,16 @@ class Yum(snap.Target):
 
     def restore(self, basedir):
         """restore the files in the snapfile"""
+
+        if snap.config.options.log_level_at_least('verbose'):
+            snap.callback.snapcallback.message("Restoring files using yum backend");
+
         # read files from the record file
         record = FilesRecordFile(basedir + "files.xml")
         sfiles = record.read()
 
         # restore those to their original locations
         for sfile in sfiles:
+            if snap.config.options.log_level_at_least('verbose'):
+                snap.callback.snapcallback.message("Restoring file " + sfile.path);
             sfile.copy_to('/', basedir)

@@ -41,45 +41,5 @@ class Callback:
         '''
         pass
 
-    def init_backup(self):
-        '''
-        starting the backup process
-        '''
-        pass
-
-    def backup_target(self, target):
-        '''
-        starting to backup the specified target
-
-        @param - the string target being backed up
-        '''
-        pass
-
-    def post_backup(self):
-        '''
-        ending the backup process
-        '''
-        pass
-
-    def init_restore(self):
-        '''
-        starting the restore process
-        '''
-        pass
-        
-    def restore_target(self, target):
-        '''
-        starting to backup packages
-
-        @param - the string target being backed up
-        '''
-        pass
-
-    def post_backup(self):
-        '''
-        ending the restore process
-        '''
-        pass
-
 # assign this to your SnapCallbackBase-derived callback to hookup the callback system
 snapcallback=SnapCallbackBase()

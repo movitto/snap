@@ -18,29 +18,14 @@ import sys
 import snap
 
 class ConsoleCallback(snap.callback.SnapCallbackBase):
-    def __init__(self)
-        self.verbose=verbose
-
     def message(self, msg):
         print msg
+
     def warn(self, warning):
         print 'WARNING: ' + warning
+
     def error(self, error):
         print 'ERROR: ' + error
-
-    def init_backup(self):
-        print "Creating Snapshot"
-    def backup_target(self, target):
-        print " Backing up " + target
-    def post_backup(self):
-        print "Snapshot completed"
-
-    def init_restore(self):
-        print "Restoring snapshot"
-    def restore_target(self, target):
-        print " Restoring " + target
-    def post_restore(self):
-        print "Restore completed"
 
 def main():
     snap.callback.snapcallback=ConsoleCallback()
@@ -62,6 +47,7 @@ def main():
         return 1
 
     except (snap.exceptions.SnapError), e:
+        snap.callback.snapcallback.error(e)
         return 1
 
 if __name__ == "__main__":

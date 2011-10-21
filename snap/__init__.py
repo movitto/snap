@@ -24,9 +24,6 @@ from snap.metadata.snapfile import SnapFile
 from snap.configmanager     import ConfigOptions
 
 class SnapBase:
-    # configuration options
-    options = None
-
     # current time
     current_time = None
 
@@ -36,7 +33,6 @@ class SnapBase:
     def __init__(self):
         '''initialize snap '''
 
-        self.options = ConfigOptions()
         self.current_time = time.strftime('%m.%d.%Y-%H.%M.%S') 
         self.construct_dir = '/tmp/snap-' + self.current_time
 
@@ -50,9 +46,9 @@ class SnapBase:
         backends = []
 
         os = OS.lookup()
-        for target in self.options.target_backends.keys():
+        for target in self.config.options.target_backends.keys():
             backend = OS.default_backend_for_target(os, target)
-            self.options.target_backends[target] = backend
+            self.config.options.target_backends[target] = backend
 
             # Dynamically load the module
             backend_file = os.path.dirname(__file__) + '/backends/' + target + '/' + backend + '.py'
@@ -75,34 +71,39 @@ class SnapBase:
         @raises InsufficientPermissionError - if an error occurs when backing up the files
         '''
         if os.geteuid() != 0:
-            snap.callback.snapcallback.error("Must be root to run this program")
-            raise InsufficientPermissionError
+            raise InsufficientPermissionError("Must be root to run this program")
 
     def backup(self, installed_packages = None):
         '''
         peform the backup operation, recording installed packages and copying new/modified files
         '''
+        if snap.config.options.log_level_at_least('normal'):
+            snap.callback.snapcallback.message("Creating snapshot")
+
         self.check_permission()
-        snap.callback.snapcallback.init_backup()
         FileManager.make_dir(self.construct_dir)
         backends = self.load_backends()
         for backend in backends:
           backend.backup(self.construct_dir) # FIXME include/exclude targets support
 
-        SnapFile(self.options.snapfile + '-' + self.current_time + '.tgz', self.construct_dir).compress()
-        snap.callback.snapcallback.post_backup()
+        SnapFile(self.config.options.snapfile + '-' + self.current_time + '.tgz', self.construct_dir).compress()
+        if snap.config.options.log_level_at_least('normal'):
+            snap.callback.snapcallback.message("Snapshot completed")
 
     def restore(self):
         '''
         perform the restore operation, restoring packages and files recorded
         '''
+        if snap.config.options.log_level_at_least('normal'):
+            snap.callback.snapcallback.message("Restoring Snapshot")
+
         self.check_permission()
-        snap.callback.snapcallback.init_restore()
         FileManager.make_dir(self.construct_dir)
         backends = self.load_backends()
-        SnapFile(self.options.snapfile, self.construct_dir).extract()
+        SnapFile(self.config.options.snapfile, self.construct_dir).extract()
 
         for backend in backends:
           backend.restore(self.construct_dir)
 
-        snap.callback.snapcallback.post_restore()
+        if snap.config.options.log_level_at_least('normal'):
+            snap.callback.snapcallback.message("Restore completed")

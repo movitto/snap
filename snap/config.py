@@ -48,11 +48,17 @@ class ConfigOptions:
     snapfile=DEFAULT_SNAPFILE
 
     def __init__(self):
-      '''initialize configuration'''
-      for backend in SnapshotTarget.backends:
-          target_backends[backend] = False
-          target_includes[backend] = []
-          target_excludes[backend] = []
+        '''initialize configuration'''
+        for backend in SnapshotTarget.backends:
+            target_backends[backend] = False
+            target_includes[backend] = []
+            target_excludes[backend] = []
+
+    def log_level_at_least(comparison):
+        return (comparison == 'quiet') or
+               (comparison == 'normal'  and self.log_level != 'quiet') or
+               (comparison == 'verbose' and (self.log_level == 'verbose' or self.log_level == 'debug')) or
+               (comparison == 'debug'   and self.log_level  == 'debug')
 
 class ConfigFile:
     """Represents the snap config file to be read and parsed"""
@@ -68,7 +74,8 @@ class ConfigFile:
 
         # if config file doesn't exist, just ignore
         if not os.path.exists(config_file):
-            snap.callback.snapcallback.warn("Config file " + config_file +" not found")
+            if snap.config.options.log_level_at_least("verbose"):
+                snap.callback.snapcallback.warn("Config file " + config_file +" not found")
         else:
             self.parser = ConfigParser.ConfigParser()
             self.parser.read(config_file)
@@ -223,3 +230,6 @@ class Config:
 
         self.configoptions=targetconfig
         self._setup_options()
+
+# static shared options
+options=ConfigOptions()
