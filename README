@@ -1,32 +1,68 @@
 [About]
- Snap is a python utility to take and restore system snapshots. 
- Included is the python snap library; two executables, snaptool 
- for the command line and gsnap for GTK; and the documentation.
+ Snap is a utility to take and restore system snapshots using the native system
+ tooling. The end user can accomplish this by using the 'snaptool' command, the
+ command line utility to take and restore snapshot files (called snapfiles) as
+ well as the 'gsnap' tool which is the graphical user interface to snap!
+
+ Developers can extend snap by defining new snapshot targets, or abstract
+ entities which snapshots can be taken of / restored, and backends to those
+ targets. Currently targets exist for package repos, packages, files, and various
+ system services.
+
+ Written by and copyright (C) of Mohammed Morsi (mo@morsi.org) 2007-2011
+ Licensed under the GPLv3
+
 
 [Installing]
- 'make install' - its that easy
+ Both RPM and DEB packages are provided for Fedora, Ubuntu, Suse, and other
+ systems which use those package formats.
+ 
+   - In install rom a source checkout / tarball simply run 'make install'
+       
+   - To install on Fedora, simply run 'yum install snap' (coming soon!)
+
+   - To install on Ubuntu, simple run 'apt-get install snap' (coming soon!)
+
 
 [Running]
  'man snap' or 'snaptool --help' for all available options
- snaptool --backup --verbose
- snaptool --restore --snapfile /tmp/snap-12.06.2007-23.57.54.tgz --verbose
- gsnap
 
-[Package Systems]
- To write a plugin to snap for your package system (call it Pkgms) add a file
- called PkgmsPluginSystem.py to PACKAGE_SYSTEMS_DIR as defined in 
- snap/snapoptions.py. In this file, derive a class called PkgmsPluginSystem from
- snap.packagesystem.PackageSystemBase and override ALL the methods. 
- Set the "packagesystem" option in the snap config file snap.conf to "pkgms",
- and lastly add your package module to the setup.py installer script
+ To take a snapshot:
+   snaptool --backup --log-level=verbose --repos --packages \
+            --files=/home:/etc:!/etc/shadow
 
-[change-log]
- Version 0.5 - 10/23/11
-  Second major release
-  Contributers:
-    Mo Morsi - mo@morsi.org
+ To restore a snapshot:
+   snaptool --restore --snapfile /tmp/snap-12.06.2007-23.57.54.tgz
 
- Version 0.1 - 12/17/07
-  Initial version!
-  Contributers:
-    Mohammed Morsi - movitto@yahoo.com
+ To launch graphical user interface:
+   gsnap
+
+
+ When invoking the command line tools pass in the snapshot targets which you
+ would like to backup. Additionally you may exlclude targets as well by passing
+ in the targets prefixed with 'no'. To restrict the list of target entities
+ which get backed up, pass that as a parameter list into the target's command
+ line flag.
+
+ For example, to disable repo / package snapshots and restrict the files which
+ are backed up to those in the /home directory (excluding "jsmith's" home), you
+ would run:
+
+   snaptool --backup --norepos --nopackages --files=/home:!/home/jsmith
+
+
+ By default the snapshot will be written to /tmp/snap-[current_timestamp].tgz
+ unless overriden with the --snapfile flag (must specify --snapfile when
+ restoring snapshots)
+
+
+[Extending]
+  To create a new snapshot target, register it with the list in
+  snap/snapshottarget.py and add a corresponding directory to snap/backends/
+
+  In that directory a backend will need to be written for every os-dependent
+  implementation of the operations needed to backup/restore that snapshot target
+
+  Furthermore configure which backend will be used by default on a per os basis
+  by modifying DEFAULT_BACKENDS in snap/options.py
+

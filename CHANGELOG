@@ -1,0 +1,15 @@
+Version 0.5 - 10/23/11
+ Second major release
+   - revamped architecture - include concepts of pluggable snapshot targets,
+     and backends
+   - tidy up callback and logging interfaces
+   - updated to license to GPLv3
+   - added slew of tests and documentation
+ Contributers:
+   Mo Morsi - mo@morsi.org
+
+
+Version 0.1 - 12/17/07
+ Initial version!
+ Contributers:
+   Mohammed Morsi - movitto@yahoo.com
