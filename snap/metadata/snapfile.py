@@ -15,21 +15,20 @@
 # GNU General Public License for more details.
 
 import tarfile
+
 class SnapFile:
     """The snapfile, the end result of the backup operation
        and input into the restore operation. This is a tar guziped archive."""
 
-    # @param snapfile tarball
-    # @param snapdirectory directory which to read/write files
     def __init__(self, snapfile, snapdirectory):
         '''initialize the snapfile
 
         @param snapfile - the path to the snapfile to create / read
         @param snapdirectory - the path to the directory to compress/extract
-        @raises - SnapMissingDirError - if the snapdirectory is invalid
+        @raises - MissingDirError - if the snapdirectory is invalid
         '''
         if not os.path.isdir(snapdirectory):
-            raise SnapMissingDirError(snapdirectory + " is an invalid snap working directory ")
+            raise MissingDirError(snapdirectory + " is an invalid snap working directory ")
         self.snapfile = snapfile
         self.snapdirectory = snapdirectory
 
@@ -46,7 +45,7 @@ class SnapFile:
     def compress(self):
         '''create a snapfile from the snapdirectory
 
-        @raises - SnapMissingFileError - if the snapfile cannot be created
+        @raises - MissingFileError - if the snapfile cannot be created
         '''
         tarball_path = self.snapdirectory + self.snapfile
 
@@ -72,7 +71,7 @@ class SnapFile:
     def extract(self):
         '''extract the snapfile into the snapdirectory
         
-        @raises - SnapMissingFileError if the snapfile does not exist
+        @raises - MissingFileError if the snapfile does not exist
         '''
 
         # open the tarball

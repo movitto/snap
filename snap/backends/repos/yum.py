@@ -18,7 +18,10 @@ import os
 from snap.files import FileManager
 
 class Yum(snap.Target):
-    #def __init__(self):
+    '''implements the snap! repos target backend using the yum package system'''
+
+    def __init__(self):
+        self.fs_root='/'
 
     def backup(self, basedir, include=[], exclude=[]):
         '''backup yum configuration and repositories'''
@@ -32,11 +35,11 @@ class Yum(snap.Target):
     def restore(self, basedir):
         '''restore yum configuration and repositories'''
         # first restore yum configuration
-        SFile("/etc/yum.conf").copy_to("/", basedir)
+        SFile(basedir + "/etc/yum.conf").copy_to(fs_root)
 
         # then restore individual repos
         for yum_repo in FileManager.get_all_files(basedir + "/etc/yum.repos.d"):
-            SFile(yum_repo).copy_to("/")
+            SFile(yum_repo).copy_to(fs_root)
 
         # update the system
         # TODO Replace this w/ the right api call at some point

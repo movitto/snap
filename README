@@ -21,6 +21,11 @@
  and lastly add your package module to the setup.py installer script
 
 [change-log]
+ Version 0.5 - 10/23/11
+  Second major release
+  Contributers:
+    Mo Morsi - mo@morsi.org
+
  Version 0.1 - 12/17/07
   Initial version!
   Contributers:

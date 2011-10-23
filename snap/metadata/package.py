@@ -18,8 +18,6 @@ import snap
 class Package:
     """information about a package tracked by snap"""
 
-    name=''
-    version=''
     def __init__(self, name='', version=''):
         '''initialize the package
 
@@ -68,17 +66,18 @@ class PackagesRecordFile:
         
 
 
-# internal class to parse the record file xml
-#class _PackageFileParser(saxutils.DefaultHandler):
 class _PackagesRecordFileParser(handler.ContentHandler):
-    # list of packages parsed
-    packages=[]
+    '''internal class to parse the packages record file xml'''
 
-    # current package being processed
-    current_package=None
+    def __init__(self):
+        # list of packages parsed
+        self.packages = []
 
-    # flag indicating if we are evaluating a name
-    in_package_content=False
+        # current package being processed
+        self.current_package=None
+
+        # flag indicating if we are evaluating a name
+        self.in_package_content=False
     
     def startElement(self, name, attrs):
         if name == 'package':

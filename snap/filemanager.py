@@ -20,22 +20,6 @@ import snap.exceptions
 class FileManager:
     """Snap file manager, performs many high level file operations"""
 
-    # name of the file which to store records 
-    recordfile=None
-
-    # directory which to copy/read files 
-    targetdirectory=None
-
-    def __init__(self, recordfile=None, targetdirectory=None):
-        '''initialize the file manager
-
-        @param recordfile - optional snap record file which to read/write
-        @param tagetdirectory - temporary directory which to read/write files
-        '''
-
-        self.recordfile = recordfile
-        self.targetdirectory = targetdirectory
-
     def rm(target):
         '''remove the specified file - static method
 

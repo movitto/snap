@@ -23,17 +23,18 @@ from snap.metadata.snapfile import SnapFile
 from snap.configmanager     import ConfigOptions
 
 class SnapBase:
-    # current time
-    current_time = None
-
-    # temp directory used to construct tarball 
-    construct_dir = None
-
-    def __init__(self):
+    def __init__(self, snapfile_id=None):
         '''initialize snap '''
 
-        self.current_time = time.strftime('%m.%d.%Y-%H.%M.%S') 
-        self.construct_dir = '/tmp/snap-' + self.current_time
+        # grab timestamp if nothing else
+        if snapfile_id == None:
+            snapfile_id = time.strftime('%m.%d.%Y-%H.%M.%S')
+
+        # unique snapfile identifier
+        self.snapfile_id = snapfile_id
+
+        # temp directory used to construct tarball 
+        self.construct_dir = '/tmp/snap-' + self.snapfile_id
 
     def load_backends(self):
         '''
@@ -46,19 +47,20 @@ class SnapBase:
 
         os = OS.lookup()
         for target in self.config.options.target_backends.keys():
-            backend = OS.default_backend_for_target(os, target)
-            self.config.options.target_backends[target] = backend
+            if self.config.options.target_backend[target]:
+                backend = OS.default_backend_for_target(os, target)
+                self.config.options.target_backends[target] = backend
 
-            # Dynamically load the module
-            backend_file = os.path.dirname(__file__) + '/backends/' + target + '/' + backend + '.py'
-            module_name, ext = os.path.splitext(backend_file)
-            module_location = imp.find_module(module_name)
-            module = imp.load_module(module_name, *module_location)
-            globals()[module_name] = module
+                # Dynamically load the module
+                backend_file = os.path.dirname(__file__) + '/backends/' + target + '/' + backend + '.py'
+                module_name, ext = os.path.splitext(backend_file)
+                module_location = imp.find_module(module_name)
+                module = imp.load_module(module_name, *module_location)
+                globals()[module_name] = module
 
-            # Dynamically instantiate the class
-            classobj = eval(module_name + '.' + backend.capitalize())
-            backends.append(classobj())
+                # Dynamically instantiate the class
+                classobj = eval(module_name + '.' + backend.capitalize())
+                backends.append(classobj())
 
         return backends
 
@@ -72,7 +74,7 @@ class SnapBase:
         if os.geteuid() != 0:
             raise InsufficientPermissionError("Must be root to run this program")
 
-    def backup(self, installed_packages = None):
+    def backup(self):
         '''
         peform the backup operation, recording installed packages and copying new/modified files
         '''
@@ -85,7 +87,7 @@ class SnapBase:
         for backend in backends:
           backend.backup(self.construct_dir) # FIXME include/exclude targets support
 
-        SnapFile(self.config.options.snapfile + '-' + self.current_time + '.tgz', self.construct_dir).compress()
+        SnapFile(self.config.options.snapfile + '-' + self.snapfile_id + '.tgz', self.construct_dir).compress()
         if snap.config.options.log_level_at_least('normal'):
             snap.callback.snapcallback.message("Snapshot completed")
 

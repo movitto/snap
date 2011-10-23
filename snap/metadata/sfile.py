@@ -21,10 +21,6 @@ from snap.filemanager import FileManager
 class SFile(object):
     """A generic file tracked by snap"""
 
-    path=''
-    name=''
-    directory=''
-
     def __init__(self, path=''):
         '''initialize the generic file
 
@@ -82,16 +78,18 @@ class FilesRecordFile:
        parser.parse(self.recordfile)
        return handler.files
 
-# internal class to parse the record file
 class _FilesRecordFileParser(handler.ContentHandler):
-    # list of files parsed
-    files = []
+    '''internal class to parse the files record file'''
 
-    # current data being processed
-    current_path=None
+    def __init__(self):
+        # list of files parsed
+        self.files = []
 
-    # if we are currently evaluating a file
-    in_file_content=False
+        # current data being processed
+        self.current_path=None
+
+        # if we are currently evaluating a file
+        self.in_file_content=False
 
     def startElement(self, name, attrs):
         if name == 'file':

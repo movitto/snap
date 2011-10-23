@@ -13,11 +13,25 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-from snap.callback import SnapCallbackBase
+from snap.callback import Callback
 
-class TestSystemCallback(SnapCallbackBase):
+class TestSystemCallback(Callback):
+    messages=[]
+    errors=[]
+    warnings=[]
+
+    def clear(self):
+        self.messages = []
+        self.errors   = []
+        self.warnings = []
+
+    def message(self, msg):
+        messages.append(msg)
+
     def error(self, error):
-        pass
-    def warn(self, warning):
-        pass
+        errors.append(msg)
 
+    def warn(self, warning):
+        warnings.append(msg)
+
+snap.callback.snapcallback=TestSystemCallback()

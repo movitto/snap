@@ -16,6 +16,7 @@
 from snap.files import FileManager
 
 class OS:
+  '''helper methods to perform OS level operations'''
 
   def lookup():
     '''lookup and return the current operating system we are running as'''
@@ -28,5 +29,6 @@ class OS:
   lookup=staticmethod(lookup)
 
   def default_backend_for_target(os, target):
+    '''return the default backend configured for the given os / snapshot target'''
     return DEFAULT_BACKENDS[os][target]
   default_backend_for_target = staticmethod(default_backend_for_target)

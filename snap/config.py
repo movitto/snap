@@ -48,7 +48,7 @@ class ConfigOptions:
 
     def __init__(self):
         '''initialize configuration'''
-        for backend in SnapshotTarget.backends:
+        for backend in SnapshotTarget.BACKENDS:
             target_backends[backend] = False
             target_includes[backend] = []
             target_excludes[backend] = []
@@ -78,7 +78,7 @@ class ConfigFile:
         else:
             self.parser = ConfigParser.ConfigParser()
             self.parser.read(config_file)
-            cfg.parse()
+            self.parse()
 
     def __string_to_bool(string):
         '''Static helper to convert a string to a boolean value'''
@@ -124,30 +124,30 @@ class ConfigFile:
 
     def __parse(self):
         '''parse configuration out of the config file'''
-        for backend in SnapshotTarget.backends:
+        for backend in SnapshotTarget.BACKENDS:
             if val = get_bool(backend):
-                self.configoptions.target_backends[backend] = val
+                snap.config.options.target_backends[backend] = val
 
             elif val = get_string(i) 
-                self.configoptions.target_backends[backend] = True
+                snap.config.options.target_backends[backend] = True
                 val = Config.string_to_array(val)
                 for include in val:
                     if include[0] == '!':
-                        self.configoptions.target_excludes[backend].append(include[1:])
+                        snap.config.options.target_excludes[backend].append(include[1:])
                     else:
-                        self.configoptions.target_includes[backend].append(include)
+                        snap.config.options.target_includes[backend].append(include)
                       
 
             elif cfg.get_bool('no' + backend):
-                self.configoptions.target_backends[i] = False
+                snap.config.options.target_backends[i] = False
 
         sf = cfg.get_string('snapfile')
         ll = cfg.get_string('log-level')
         
         if sf != None:
-            self.configoptions.snapfile = sf
+            snap.config.options.snapfile = sf
         if ll != None:
-            self.configoptions.log_level = ll
+            snap.config.options.log_level = ll
 
 class Config:
     """The configuration manager, used to set and verify snap config values 
@@ -163,47 +163,43 @@ class Config:
         for config_file in CONFIG_FILES:
           cfg = Config(config_file)
 
-    # Setup the parser to expect the values when parsing the command line
-    def _setup_options(self):
-        debug("Setting up options")
+    def parse_cli(self):
+        '''
+        parses the command line an set them in the target ConfigOptions
+        '''
+
         usage = "usage: %prog [options] arg"
         self.parser = optparser.OptionParser(usage, version=SNAP_VERSION)
         self.parser.add_option('', '--restore', dest = 'restore', action='store_true', default=False, help='Restore snapshot')
         self.parser.add_option('', '--backup', dest = 'backup', action='store_true', default=False, help='Take snapshot')
         self.parser.add_option('-l', '--log-level', dest = 'log_level', action='store', default="normal", help='Log level (quiet, normal, verbose, debug)')
         self.parser.add_option('-f', '--snapfile', dest = 'snapfile', action='store', default=None, help='Snapshot file')
-        for backend in SnapshotTarget.backends:
+        for backend in SnapshotTarget.BACKENDS:
             self.parser.add_option('', '--'   + backend, dest = backend, action='store', default=None, help='Enable '  + backend + ' snapshots/restoration')
             self.parser.add_option('', '--no' + backend, dest = backend, action='store_false', default=False, help='Disable ' + backend + ' snapshots/restoration')
 
-    def parse_cli(self):
-        '''
-        parses the command line an set them in the target ConfigOptions
-        '''
-
-        debug("Parsing command line")
         (options, args) = self.parser.parse_args()
         if options.restore != False:
-            self.configoptions.mode = ConfigOptions.RESTORE
+            snap.config.options.mode = ConfigOptions.RESTORE
         if options.backup != False:
-            self.configoptions.mode = ConfigOptions.BACKUP
+            snap.config.options.mode = ConfigOptions.BACKUP
         if options.log_level:
-            self.configoptions.log_level=options.log_level
+            snap.config.options.log_level=options.log_level
         if options.snapfile != None:
-            self.configoptions.snapfile=options.snapfile
-        for backend in SnapshotTarget.backends:
+            snap.config.options.snapfile=options.snapfile
+        for backend in SnapshotTarget.BACKENDS:
             val = getattr(options, backend)
             if val != None:
                 if type(val) == str:
-                    self.configoptions.target_backend[backend] = True
+                    snap.config.options.target_backend[backend] = True
                     val = Config.string_to_array(val)
                     for include in val:
                         if include[0] == '!':
-                            self.configoptions.target_excludes[backend].append(include[1:])
+                            snap.config.options.target_excludes[backend].append(include[1:])
                         else:
-                            self.configoptions.target_includes[backend].append(include)
+                            snap.config.options.target_includes[backend].append(include)
                 else:
-                    self.configoptions.target_backend[backend] = val
+                    snap.config.options.target_backend[backend] = val
 
     def verify_integrity(self):
         '''
@@ -211,24 +207,10 @@ class Config:
 
         @raises - SnapArgError if the options are invalid
         '''
-
-        debug('Verifying Options Intgerity')
-        if self.configoptions.mode == None: # mode not specified
+        if snap.config.options.mode == None: # mode not specified
             raise snap.exceptions.SnapArgError("Must specify backup or restore")
-        if self.configoptions.mode == ConfigOptions.RESTORE and self.configoptions.snapfile == DEFAULT_SNAPFILE: # need to specify snapfile when restoring
+        if snap.config.options.mode == ConfigOptions.RESTORE and snap.config.options.snapfile == DEFAULT_SNAPFILE: # need to specify snapfile when restoring
             raise snap.exceptions.SnapArgError("Must specify snapfile")
-        # Add any additional checks here
-
-    def __init__(self, targetconfig):
-        '''
-        create the config manager 
-
-        @param targetconfig - instance of ConfigOptions which to set values retrieved
-                              from the config file and command line on
-        '''
-
-        self.configoptions=targetconfig
-        self._setup_options()
 
 # static shared options
 options=ConfigOptions()

@@ -41,4 +41,4 @@ class Callback:
         pass
 
 # assign this to your SnapCallbackBase-derived callback to hookup the callback system
-snapcallback=SnapCallbackBase()
+snapcallback=Callback()

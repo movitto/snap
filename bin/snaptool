@@ -27,19 +27,20 @@ class ConsoleCallback(snap.callback.SnapCallbackBase):
         print 'ERROR: ' + error
 
 def main():
-    snap.callback.snapcallback=ConsoleCallback()
     try:
-        snapbase = snap.SnapBase()
+        snap.callback.snapcallback=ConsoleCallback()
 
-        conf = snap.configmanager.Config(snapbase.options)
+        conf = snap.configmanager.Config()
         conf.read_config()
         conf.parse_cli()
         conf.verify()
 
-        if snapbase.options.mode == snapbase.options.RESTORE:
+        snapbase = snap.SnapBase()
+
+        if snap.config.options.mode == snap.config.options.RESTORE:
             snapbase.restore()
             return 0
-        if snapbase.options.mode == snapbase.options.BACKUP:
+        if snap.config.options.mode == snap.config.options.BACKUP:
             snapbase.backup()
             return 0
 

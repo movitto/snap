@@ -16,9 +16,13 @@
 import yum
 
 class Yum(snap.Target):
+    '''implements the snap! packages target backend using the yum package system'''
+
     def __init__(self):
-      self.yum = yum.YumBase();
-      #yum.YumBase.__init__(self.yum)
+        self.yum = yum.YumBase();
+        #yum.YumBase.__init__(self.yum)
+
+        self.fs_root='/'
 
     def backup(self, basedir, include=[], exclude=[]):
         '''backup the packages installed locally'''
@@ -103,14 +107,14 @@ class Yum(snap.Target):
                 packagenames.append(pkg.name)
 
         # install the kernel modules
-        command = 'yum --nogpgcheck -y install '
+        command = 'yum --nogpgcheck -y --installroot ' + fs_root + ' install '
         for pkg in kmods:
             command += pkg + ' ' 
         print command
         os.system(command)
 
         # install the rest of the packages
-        command = 'yum --nogpgcheck -y install '
+        command = 'yum --nogpgcheck -y --installroot ' + fs_root + ' install '
         for pkg in packagenames:
 	        command += pkg + ' '
         print command

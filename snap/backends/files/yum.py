@@ -16,7 +16,10 @@
 import os
 
 class Yum(snap.Target):
-    #def __init__(self):
+    '''implements the snap! files target backend using the yum package system'''
+
+    def __init__(self):
+        self.fs_root='/'
 
     def __file_modified(self,file_name):
         '''return true if package has been modified since installation, else false'''
@@ -75,4 +78,4 @@ class Yum(snap.Target):
         for sfile in sfiles:
             if snap.config.options.log_level_at_least('verbose'):
                 snap.callback.snapcallback.message("Restoring file " + sfile.path);
-            sfile.copy_to('/', basedir)
+            sfile.copy_to(fs_root, basedir)
