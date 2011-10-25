@@ -15,8 +15,10 @@
 
 import sys
 import snap
+import snap.config
+import snap.callback
 
-class ConsoleCallback(snap.callback.SnapCallbackBase):
+class ConsoleCallback(snap.callback.Callback):
     def message(self, msg):
         print msg
 
@@ -30,10 +32,10 @@ def main():
     try:
         snap.callback.snapcallback=ConsoleCallback()
 
-        conf = snap.configmanager.Config()
+        conf = snap.config.Config()
         conf.read_config()
         conf.parse_cli()
-        conf.verify()
+        conf.verify_integrity()
 
         snapbase = snap.SnapBase()
 
@@ -47,7 +49,7 @@ def main():
         return 1
 
     except (snap.exceptions.SnapError), e:
-        snap.callback.snapcallback.error(e)
+        snap.callback.snapcallback.error(e.message)
         return 1
 
 if __name__ == "__main__":

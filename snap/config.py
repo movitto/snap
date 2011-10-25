@@ -166,9 +166,8 @@ class Config:
 
     # read values from the config files and set them in the target ConfigOptions
     def read_config(self):
-        debug('Parsing config')
         for config_file in CONFIG_FILES:
-          cfg = Config(config_file)
+          ConfigFile(config_file)
 
     def parse_cli(self):
         '''
@@ -176,7 +175,7 @@ class Config:
         '''
 
         usage = "usage: %prog [options] arg"
-        self.parser = optparser.OptionParser(usage, version=SNAP_VERSION)
+        self.parser = optparse.OptionParser(usage, version=SNAP_VERSION)
         self.parser.add_option('', '--restore', dest = 'restore', action='store_true', default=False, help='Restore snapshot')
         self.parser.add_option('', '--backup', dest = 'backup', action='store_true', default=False, help='Take snapshot')
         self.parser.add_option('-l', '--log-level', dest = 'log_level', action='store', default="normal", help='Log level (quiet, normal, verbose, debug)')
@@ -198,7 +197,7 @@ class Config:
             val = getattr(options, backend)
             if val != None:
                 if type(val) == str:
-                    snap.config.options.target_backend[backend] = True
+                    snap.config.options.target_backends[backend] = True
                     val = ConfigFile.string_to_array(val)
                     for include in val:
                         if include[0] == '!':
@@ -206,7 +205,7 @@ class Config:
                         else:
                             snap.config.options.target_includes[backend].append(include)
                 else:
-                    snap.config.options.target_backend[backend] = val
+                    snap.config.options.target_backends[backend] = val
 
     def verify_integrity(self):
         '''
