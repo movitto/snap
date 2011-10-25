@@ -6,10 +6,11 @@ TODO:
    - filesystem options, acls, and extended attributes
    - partition layout, swap, lvm config (perhaps w/ a small boostrapping iso/setup)
  - Incremental snapshots
+ - Snapshot registry
+ - Encrypted snapshots
  - Internationalize text
  - Taking remote snapshots (Snap! server)
- - Register generic hooks to be performed at different stages
  - Snap partition from which snapshots can be saved to / restored from
+ - Register generic hooks to be performed at different stages
  - Support selecting packages to install / backup
- - Support encrypted snapshots
  - DBUS interface
