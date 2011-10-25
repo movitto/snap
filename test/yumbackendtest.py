@@ -78,20 +78,28 @@ class YumBackendTest(unittest.TestCase):
         for pkg in yum.YumBase().rpmdb:
             self.assertIn(pkg.name, pkgs)
 
-    # FIXME get this test working
+    # TODO this test works but takes a while to execute
     #def testRestorePackages(self):
     #    restore_target = snap.backends.packages.syum.Syum()
     #    restore_target.backup(self.fs_root)
+    #    restore_target.fs_root = self.fs_root
     #    restore_target.restore(self.fs_root)
 
-    #    record = PackagesRecordFile(self.fs_root + "packages.xml")
+    #    record = PackagesRecordFile(self.fs_root + "/packages.xml")
     #    record_packages = record.read()
 
+    #    record_package_names = []
+    #    for pkg in record_packages:
+    #        record_package_names.append(pkg.name)
+
+    #    installed_package_names = []
     #    lyum = yum.YumBase()
     #    lyum.rpmdb.dbpath = self.fs_root + '/var/lib/rpm'
-    #    
-    #    for pkg in record_packages:
-    #        self.assertIn(pkg, lyum.rpmdb)
+    #    for pkg in lyum.rpmdb:
+    #        installed_package_names.append(pkg.name)
+
+    #    for pkg in record_package_names:
+    #        self.assertIn(pkg, installed_package_names)
 
     def testBackupFiles(self):
         f=open(self.fs_root + "/foo" , 'w')

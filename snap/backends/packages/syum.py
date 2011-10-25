@@ -13,7 +13,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-import re
 import os
 import yum
 import sets
@@ -26,7 +25,6 @@ class Syum(snap.snapshottarget.SnapshotTarget):
 
     def __init__(self):
         self.yum = yum.YumBase();
-        #yum.YumBase.__init__(self.yum)
 
         self.fs_root='/'
 
@@ -54,75 +52,41 @@ class Syum(snap.snapshottarget.SnapshotTarget):
         if snap.config.options.log_level_at_least('verbose'):
             snap.callback.snapcallback.message("Restoring packages using yum backend");
 
+        # set installroot to fs_root
+        self.yum.conf.installroot = self.fs_root
+
+        # need this to get around gpgcheck in this case (setting gpgcheck to false will not work)
+        self.yum.conf.assumeyes = True
+
+        self.yum.conf.skip_broken = True
+
         # first update the system
         for pkg in self.yum.rpmdb:
             self.yum.update(pkg)
-        self.yum.buildTransaction()
-        self.yum.processTransaction()
-
-        # FIXME use native yum interface instead of dispatching to command
-        #  pl = self.doPackageLists('all')
-	      #packagenames = []
-        #  for package in packages:
-        #      packagenames.append(package.name)
-        #  # for (po, matched_value) in self.searchGenerator(['name'], [package.name]):
-	      #dlpkgs = []
-        #  exactmatch, matched, unmatched = yum.packages.parsePackages(pl.available, packagenames)
-        #  exactmatch = yum.misc.unique(exactmatch)
-        #  for po in exactmatch:
-        #      debug('Installing ' + str(po))
-        #      if not PS_FAILSAFE:
-        #          self.install(po)
-		    #      dlpkgs.append(po)
-        #  if not PS_FAILSAFE:
-        #      self.buildTransaction()
-    	  #    self.downloadPkgs(dlpkgs)
-
-        #      testcb = RPMTransaction(self, test=True)
-    	  #    self.initActionTs()
-    	  #    self.populateTs(keepold=0)
-    	  #    tserrors = self.ts.test(testcb)
-    	  #    del testcb
-    	  #    if len(tserrors > 0):
-    	  #	    raise yum.Errors.YumBaseError
-    	  #    self.runTransaction(None)
-    	  #    del self.ts
-    
-    	  #    self.initActionTs()
-    	  #    self.populateTs(keepold=0)
-    	  #    self.ts.check()
-    	  #    self.ts.order()
-    	  #
-    	  #    cb = RPMTransaction(self)
-    	  #    self.runTransaction(cb)
 
         # read files from the record file
         record = PackagesRecordFile(basedir + "/packages.xml")
         packages = record.read()
 
-        # handle kernel modules first
-        #   and ignore kernel as it was previously updated
-        packagenames = []
-        kmods = []
+        # grab list of packages
+        pl = self.yum.doPackageLists('all')
+
+        # find the ones available to install
         for pkg in packages:
             if snap.config.options.log_level_at_least('verbose'):
                 snap.callback.snapcallback.message("Restoring package " + pkg.name);
-            if re.match(r'kmod*', pkg.name.rstrip()) != None:
-                kmods.append(pkg.name)
-            elif pkg.name.rstrip() != 'kernel':
-                packagenames.append(pkg.name)
+            exactmatch, matched, unmatched = yum.packages.parsePackages(pl.available, [pkg.name])
 
-        # install the kernel modules
-        command = 'yum --nogpgcheck -y --installroot ' + self.fs_root + ' install '
-        for pkg in kmods:
-            command += pkg + ' ' 
-        print command
-        os.system(command)
+            # install packages with best matching architectures
+            archs = {}
+            for match in exactmatch:
+                archs[match.arch] = match
+            arch = self.yum.arch.get_best_arch_from_list(archs.keys())
+            if arch:
+                pkg = archs[arch]
+                if pkg:
+                    self.yum.install(pkg)
 
-        # install the rest of the packages
-        command = 'yum --nogpgcheck -y --installroot ' + self.fs_root + ' install '
-        for pkg in packagenames:
-	        command += pkg + ' '
-        print command
-        os.system(command)
-
+        # build / run the transaction
+        self.yum.buildTransaction()
+        self.yum.processTransaction()

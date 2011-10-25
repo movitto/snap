@@ -7,7 +7,8 @@ TODO:
    - partition layout, swap, lvm config (perhaps w/ a small boostrapping iso/setup)
  - Incremental snapshots
  - Snapshot registry
- - Encrypted snapshots
+ - Encrypted snapshots (perhaps just leave this up to admin to use gpg?)
+ - Scheduled snapshots (perhaps just leave this up to cron?)
  - Internationalize text
  - Taking remote snapshots (Snap! server)
  - Snap partition from which snapshots can be saved to / restored from
