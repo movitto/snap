@@ -13,12 +13,11 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-from snap.callback import Callback
+import snap.callback
 
-class TestSystemCallback(Callback):
-    messages=[]
-    errors=[]
-    warnings=[]
+class TestSystemCallback(snap.callback.Callback):
+    def __init__(self):
+        self.clear()
 
     def clear(self):
         self.messages = []
@@ -26,12 +25,12 @@ class TestSystemCallback(Callback):
         self.warnings = []
 
     def message(self, msg):
-        messages.append(msg)
+        self.messages.append(msg)
 
     def error(self, error):
-        errors.append(msg)
+        self.errors.append(error)
 
     def warn(self, warning):
-        warnings.append(msg)
+        self.warnings.append(warning)
 
 snap.callback.snapcallback=TestSystemCallback()

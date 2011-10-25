@@ -59,6 +59,7 @@
 [Extending]
   To create a new snapshot target, register it with the list in
   snap/snapshottarget.py and add a corresponding directory to snap/backends/
+  (containing an empty __init__.py)
 
   In that directory a backend will need to be written for every os-dependent
   implementation of the operations needed to backup/restore that snapshot target

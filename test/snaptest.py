@@ -14,22 +14,24 @@
 # GNU General Public License for more details.
 
 import os
+import types
 import unittest
 
 import snap
 from snap.exceptions import InsufficientPermissionError
+from snap.osregistry import OS
 
 class SnapBaseTest(unittest.TestCase):
     def setUp(self):
         self.snapbase = snap.SnapBase(snapfile_id='snap-test')
 
         self.orig_os_lookup = OS.lookup
-        OS.lookup = SnapBaseTest.new_os_lookup
+        OS.lookup = types.MethodType(SnapBaseTest.new_os_lookup, OS)
 
-        self.orig_target_backends = self.config.options.target_backends
-        snap.config.options.target_backends = {'repos'    => True,
-                                               'packages' => True,
-                                               'files'    => True }
+        self.orig_target_backends = snap.config.options.target_backends
+        snap.config.options.target_backends = {'repos'    : True,
+                                               'packages' : True,
+                                               'files'    : True }
 
     def tearDown(self):
         OS.lookup = self.orig_os_lookup
@@ -41,37 +43,41 @@ class SnapBaseTest(unittest.TestCase):
             restoreeuid = True
             os.seteuid(1)
 
-        self.assertRaises(InsufficientPermissionError, self.snapbase.backup())
-        self.assertRaises(InsufficientPermissionError, self.snapbase.restore())
+        with self.assertRaises(InsufficientPermissionError):
+            self.snapbase.backup()
+        with self.assertRaises(InsufficientPermissionError):
+            self.snapbase.restore()
 
         if restoreeuid:
             os.seteuid(0) 
 
     def new_os_lookup(self):
         return 'mock'
+    new_os_lookup=staticmethod(new_os_lookup)
 
     def testLoadBackends(self):
         backends = self.snapbase.load_backends()
+        backend_classes = []
+        for backend in backends:
+            backend_classes.append(backend.__class__)
+
         self.assertEqual('mock', snap.config.options.target_backends['repos'])
         self.assertEqual('mock', snap.config.options.target_backends['packages'])
         self.assertEqual('mock', snap.config.options.target_backends['files'])
-        self.assertEqual(globals()["snap.backends.repos.Mock"],    snap.backends.repos.Mock)
-        self.assertEqual(globals()["snap.backends.packages.Mock"], snap.backends.repos.Mock)
-        self.assertEqual(globals()["snap.backends.files.Mock"],    snap.backends.repos.Mock)
 
-        self.assertIn(snap.backends.repos.Mock,    backends)
-        self.assertIn(snap.backends.packages.Mock, backends)
-        self.assertIn(snap.backends.files.Mock,    backends)
+        self.assertIn(snap.backends.repos.mock.Mock,    backend_classes)
+        self.assertIn(snap.backends.packages.mock.Mock, backend_classes)
+        self.assertIn(snap.backends.files.mock.Mock,    backend_classes)
 
 
     def testBackup(self):
         self.snapbase.backup()
 
-        self.assertTrue(snap.backends.repos.Mock.backup_called)
-        self.assertTrue(snap.backends.packages.Mock.backup_called)
-        self.assertTrue(snap.backends.files.Mock.backup_called)
+        self.assertTrue(snap.backends.repos.mock.Mock.backup_called)
+        self.assertTrue(snap.backends.packages.mock.Mock.backup_called)
+        self.assertTrue(snap.backends.files.mock.Mock.backup_called)
 
-        self.assertTrue(os.path.exists(snap.config.options.snapfile + "-snap-test.tgz")
+        self.assertTrue(os.path.exists(snap.config.options.snapfile + "-snap-test.tgz"))
         os.remove(snap.config.options.snapfile + "-snap-test.tgz")
 
 
@@ -79,11 +85,11 @@ class SnapBaseTest(unittest.TestCase):
         # to generate the snapfile
         self.snapbase.backup()
 
-        self.config.options.snapfile = snap.config.options.snapfile + "-snap-test.tgz"
+        snap.config.options.snapfile = snap.config.options.snapfile + "-snap-test.tgz"
         self.snapbase.restore()
 
-        self.assertTrue(snap.backends.repos.Mock.restore_called)
-        self.assertTrue(snap.backends.packages.Mock.restore_called)
-        self.assertTrue(snap.backends.files.Mock.restore_called)
+        self.assertTrue(snap.backends.repos.mock.Mock.restore_called)
+        self.assertTrue(snap.backends.packages.mock.Mock.restore_called)
+        self.assertTrue(snap.backends.files.mock.Mock.restore_called)
 
         os.remove(snap.config.options.snapfile)

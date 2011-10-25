@@ -13,33 +13,43 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-class SnapfileMetadataTest(unittest.TestCase):
+import os
+import tarfile
+import unittest
+
+from snap.exceptions  import MissingDirError
+from snap.metadata.snapfile import SnapFile
+
+class SnapFileTest(unittest.TestCase):
     def testInvalidSnapdirectoryShouldRaiseError(self):
         with self.assertRaises(MissingDirError) as context:
-            Snapfile('foo', '/invalid/dir')
+            SnapFile('foo', '/invalid/dir')
         self.assertEqual(context.exception.message, '/invalid/dir is an invalid snap working directory ')
 
-    def testCompressSnapfile(self):
+    def testCompressSnapFile(self):
         snapdir = os.path.join(os.path.dirname(__file__), "data/")
-        snapfile = Snapfile("test-snapfile.tgz", snapdir)
+        snapfile = SnapFile(snapdir + "test-snapfile.tgz", snapdir)
         snapfile.compress()
 
         tarball = tarfile.open(snapdir + "test-snapfile.tgz", "r:gz")
         files = []
         for tarinfo in tarball:
             files.append(tarinfo.name)
-        self.assertIn("tmp/file1", files)
-        self.assertIn("tmp/subdir/file2", files)
+        self.assertIn(snapdir[1:] + "tmp/file1", files)
+        self.assertIn(snapdir[1:] + "tmp/subdir/file2", files)
 
         os.remove(snapdir + "test-snapfile.tgz")
 
-    def testExtractSnapfile(self):
+    def testExtractSnapFile(self):
         snap_file_path = os.path.join(os.path.dirname(__file__), "data/existing-snapfile.tgz")
-        snapdir = os.path.join(os.path.dirname(__file__), "data/new-snapdir")
-        snapfile = Snapfile(snap_file_path, snapdir)
+        snapdir = os.path.join(os.path.dirname(__file__), "data/new-snapdir/")
+        os.makedirs(snapdir)
+        snapfile = SnapFile(snap_file_path, snapdir)
         snapfile.extract()
 
         self.assertTrue(os.path.exists(snapdir + "packagefile.xml"))
         self.assertTrue(os.path.exists(snapdir + "recordfile.xml"))
 
-        os.remove(snapdir)
+        os.remove(snapdir + "packagefile.xml")
+        os.remove(snapdir + "recordfile.xml")
+        os.removedirs(snapdir)

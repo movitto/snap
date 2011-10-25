@@ -15,6 +15,7 @@
 
 import os
 import shutil
+import xml, xml.sax, xml.sax.handler, xml.sax.saxutils
 
 from snap.filemanager import FileManager
 
@@ -33,28 +34,29 @@ class SFile(object):
         self.name = path_components[len(path_components)-1]
 
         path_components.pop()
-        self.directory = '/'.join(*path_components)
+        self.directory = '/'.join(path_components)
 
-    def copy_to(basedir, path_prefix=''):
+    def copy_to(self, basedir, path_prefix=''):
         '''copy the sfile to the specified base directory, replicating the directory structure
            of the path under it
            
            @param basedir - the directory to replicate the path and copy the file to
            @param path_prefix - an optional prefix to prepend to the sfile path'''
-        os.makedirs(basedir + self.directory)
-        shutil.copystat(self.directory, basedir + self.directory)
-        ofs = os.stat(self.directory)
-        os.chown(basedir + self.directory, ofs.st_uid, ofs.st_gid)
+        if not os.path.isdir(basedir + self.directory):
+            os.makedirs(basedir + self.directory)
+            shutil.copystat(self.directory, basedir + self.directory)
+            ofs = os.stat(self.directory)
+            os.chown(basedir + self.directory, ofs.st_uid, ofs.st_gid)
 
         shutil.copyfile(path_prefix + self.path, basedir + self.path)
         shutil.copystat(path_prefix + self.path, basedir + self.path)
-        ofs = os.stat(path_prefix + sfile.path)
+        ofs = os.stat(path_prefix + self.path)
         os.chown(basedir + self.path, ofs.st_uid, ofs.st_gid)
 
 class FilesRecordFile:
     '''a snap files record file, contains list of files modified, to restore'''
     
-    def __init__(self, recordfile)
+    def __init__(self, recordfile):
        self.recordfile = recordfile
 
     def write(self, sfiles=[]):
@@ -63,22 +65,22 @@ class FilesRecordFile:
        @param files - the list of SFiles to record
        '''
        f=open(self.recordfile, 'w') 
-       f.write('<files>\n')
-       for sfile in files:
-           f.write(' <file>\n  ' + saxutils.escape(sfile.path) + '\n </file>\n')
-       f.write('</files>\n')
+       f.write('<files>')
+       for sfile in sfiles:
+           f.write('<file>' + xml.sax.saxutils.escape(sfile.path) + '</file>')
+       f.write('</files>')
        f.close()
 
     def read(self):
        '''restore the files stored in and tracked by the record file in the targetdir'''
-       parser = xml.sax.handler.make_parser()
+       parser = xml.sax.make_parser()
        parser.setFeature(xml.sax.handler.feature_namespaces, 0)
        handler = _FilesRecordFileParser()
        parser.setContentHandler(handler)
        parser.parse(self.recordfile)
        return handler.files
 
-class _FilesRecordFileParser(handler.ContentHandler):
+class _FilesRecordFileParser(xml.sax.handler.ContentHandler):
     '''internal class to parse the files record file'''
 
     def __init__(self):
@@ -105,4 +107,4 @@ class _FilesRecordFileParser(handler.ContentHandler):
     def endElement(self, name):
         if name == 'file':
             self.in_file_content = False
-            files.append(SFile(saxutils.unescape(self.current_path)))
+            self.files.append(SFile(xml.sax.saxutils.unescape(self.current_path)))

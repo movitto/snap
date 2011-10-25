@@ -13,9 +13,15 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+import re
+import os
 import yum
+import sets
 
-class Yum(snap.Target):
+import snap
+from snap.metadata.package import Package, PackagesRecordFile
+
+class Syum(snap.snapshottarget.SnapshotTarget):
     '''implements the snap! packages target backend using the yum package system'''
 
     def __init__(self):
@@ -31,7 +37,7 @@ class Yum(snap.Target):
 
         # retrieve installed packages
         packages=[]
-        packagenames = Set()
+        packagenames = set()
         for pkg in self.yum.rpmdb:
             if not pkg.name in packagenames:
                 if snap.config.options.log_level_at_least('verbose'):
@@ -92,7 +98,7 @@ class Yum(snap.Target):
 
         # read files from the record file
         record = PackagesRecordFile(basedir + "packages.xml")
-        sfiles = record.read()
+        packages = record.read()
 
         # handle kernel modules first
         #   and ignore kernel as it was previously updated
@@ -107,14 +113,14 @@ class Yum(snap.Target):
                 packagenames.append(pkg.name)
 
         # install the kernel modules
-        command = 'yum --nogpgcheck -y --installroot ' + fs_root + ' install '
+        command = 'yum --nogpgcheck -y --installroot ' + self.fs_root + ' install '
         for pkg in kmods:
             command += pkg + ' ' 
         print command
         os.system(command)
 
         # install the rest of the packages
-        command = 'yum --nogpgcheck -y --installroot ' + fs_root + ' install '
+        command = 'yum --nogpgcheck -y --installroot ' + self.fs_root + ' install '
         for pkg in packagenames:
 	        command += pkg + ' '
         print command

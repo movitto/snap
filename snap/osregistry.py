@@ -13,7 +13,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-from snap.files import FileManager
+from snap.filemanager import FileManager
+from snap.options     import *
 
 class OS:
   '''helper methods to perform OS level operations'''
@@ -21,9 +22,9 @@ class OS:
   def lookup():
     '''lookup and return the current operating system we are running as'''
     # TODO other operating system checks
-    if FileManager.exists('/etc/fedora-release')
+    if FileManager.exists('/etc/fedora-release'):
       return 'fedora'
-    elif FileManager.exists('C:\\')
+    elif FileManager.exists('C:\\'):
       return 'windows'
     return None
   lookup=staticmethod(lookup)

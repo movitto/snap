@@ -13,7 +13,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+import os
 import unittest
+
+from snap.metadata.package import Package, PackagesRecordFile
 
 class PackageMetadataTest(unittest.TestCase):
     def testWritePackageRecordFile(self):
@@ -22,17 +25,20 @@ class PackageMetadataTest(unittest.TestCase):
                      Package(name='baz', version='0.1'),
                      Package(name='bar')]
 
-        package_record_file = PackageRecordFile(file_path)
+        package_record_file = PackagesRecordFile(file_path)
         package_record_file.write(packages)
         f=open(file_path, 'r')
         contents = f.read()
         f.close()
 
-        self.assertEqual("<packages>\n<package>foo</package>\n<package>bar</package>\n<package>bar</package></packages>", contents)
+        self.assertEqual("<packages><package>foo</package><package>baz</package><package>bar</package></packages>", contents)
 
     def testReadPackageRecordFile(self):
         file_path = os.path.join(os.path.dirname(__file__), "data/packagefile.xml")
-        packages = PackageRecordFile(file_path).read()
-        self.assertIn('apache', packages)
-        self.assertIn('mysql', packages)
-        self.assertIn('kernel', packages)
+        packages = PackagesRecordFile(file_path).read()
+        package_names = []
+        for package in packages:
+            package_names.append(package.name)
+        self.assertIn('apache', package_names)
+        self.assertIn('mysql', package_names)
+        self.assertIn('kernel', package_names)

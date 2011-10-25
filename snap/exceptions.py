@@ -13,59 +13,45 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-class SnapError(Exception):
+class SnapError(BaseException):
     """An error occured during Snap!'s operation"""
 
-    def __init__(self,value = ''):
-        self.parameter=value
-    def __str__(self):
-        return repr(self.parameter)
+    def __init__(self,message = ''):
+        BaseException.__init__(self, message)
 
 class ArgError(SnapError):
     """An illegal arguement to the system was specified or an invalid 
        option set was detected in ConfigManager.verify_integrity()"""
 
-    def __init__(self,value = ''):
-        SnapError.__init__(self, value)
-    def __str__(self):
-        return repr(self.parameter)
+    def __init__(self,message = ''):
+        SnapError.__init__(self, message)
 
 class FilesystemError(SnapError):
     """An error occured during a filesystem operation"""
 
-    def __init__(self,value = ''):
-        SnapError.__init__(self, value)
-    def __str__(self):
-        return repr(self.parameter)
+    def __init__(self,message = ''):
+        SnapError.__init__(self, message)
 
 class MissingFileError(FilesystemError):
     """A required file was not found"""
 
-    def __init__(self,value = ''):
-        FilesystemError.__init__(self, value)
-    def __str__(self):
-        return repr(self.parameter)
+    def __init__(self,message = ''):
+        FilesystemError.__init__(self, message)
 
 class MissingDirError(FilesystemError):
     """A required directory was not found"""
 
-    def __init__(self,value = ''):
-        FilesystemError.__init__(self, value)
-    def __str__(self):
-        return repr(self.parameter)
+    def __init__(self,message = ''):
+        FilesystemError.__init__(self, message)
 
 class PackageSystemError(SnapError):
     """An error occured during a packagesystem operation"""
 
-    def __init__(self,value = ''):
-        SnapError.__init__(self, value)
-    def __str__(self):
-        return repr(self.parameter)
+    def __init__(self,message = ''):
+        SnapError.__init__(self, message)
 
 class InsufficientPermissionError(SnapError):
     """The user does not have permission to perform the requested operation"""
 
-    def __init__(self,value = ''):
-        SnapError.__init__(self, value)
-    def __str__(self):
-        return repr(self.parameter)
+    def __init__(self,message = ''):
+        SnapError.__init__(self, message)

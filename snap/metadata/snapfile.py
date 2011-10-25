@@ -14,7 +14,12 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+import os
 import tarfile
+
+import snap
+from snap.filemanager import FileManager
+from snap.exceptions  import MissingDirError
 
 class SnapFile:
     """The snapfile, the end result of the backup operation
@@ -32,41 +37,45 @@ class SnapFile:
         self.snapfile = snapfile
         self.snapdirectory = snapdirectory
 
-    def __prepare_file_for_tarball(tarball, fullpath, handle):
+    def __prepare_file_for_tarball(tarball, fullpath):
         '''set attributes of a file for inclusion in a tarball'''
         fs = os.stat(fullpath)
-        tarinfo = tarball.gettarinfo(handle)
+        tarinfo = tarball.gettarinfo(fullpath)
         tarinfo.uid = fs.st_uid
         tarinfo.gid = fs.st_gid
         tarinfo.mtime = fs.st_mtime
         tarinfo.mode = fs.st_mode
         return tarinfo
+    __prepare_file_for_tarball=staticmethod(__prepare_file_for_tarball)
         
     def compress(self):
         '''create a snapfile from the snapdirectory
 
         @raises - MissingFileError - if the snapfile cannot be created
         '''
-        tarball_path = self.snapdirectory + self.snapfile
-
         # create the tarball
-        tarball = tarfile.open(tarball_path, "w:gz")
+        tarball = tarfile.open(self.snapfile, "w:gz")
+
+        # temp store the working directory, before changing to the snapdirectory
+        cwd = os.getcwd()
+        os.chdir(self.snapdirectory)
 
         # copy directories into snapfile
-        for sdir in FileManager.get_all_sub_directories(self.snapdirectory, recursive=True):
-            handle = sdir.replace(self.snapdirectory + "/", "")
-            tarball.addfile(self.prepare_file_for_tarball(tarball, sdir, handle))
+        for sdir in FileManager.get_all_subdirectories(os.getcwd(), recursive=True):
+            tarball.addfile(self.__prepare_file_for_tarball(tarball, sdir))
 
         # copy files into snapfile
-        for sfile in FileManager.get_all_files(self.snapdirectory):
-            handle = sfile.path.replace(self.snapdirectory + "/", "")
-            tarball.addfile(self.prepare_file_for_tarball(tarball, sfile.path, handle), file(handle))
+        for tfile in FileManager.get_all_files(include_dirs=[os.getcwd()]):
+            tarball.addfile(self.__prepare_file_for_tarball(tarball, tfile), file(tfile))
 
         # finish up tarball creation
         tarball.close()
 
         if snap.config.options.log_level_at_least('normal'):
-            snap.callback.snapcallback.message("Snapfile " + tarball_path + " created")
+            snap.callback.snapcallback.message("Snapfile " + self.snapfile + " created")
+
+        # restore the working directory
+        os.chdir(cwd)
 
     def extract(self):
         '''extract the snapfile into the snapdirectory
@@ -77,6 +86,10 @@ class SnapFile:
         # open the tarball
         tarball = tarfile.open(self.snapfile) 
 
+        # temp store the working directory, before changing to the snapdirectory
+        cwd = os.getcwd()
+        os.chdir(self.snapdirectory)
+
         # extract files from it
         for tarinfo in tarball:
             tarball.extract(tarinfo)
@@ -85,4 +98,7 @@ class SnapFile:
         tarball.close()
 
         if snap.config.options.log_level_at_least('normal'):
-            snap.callback.snapcallback.message("Snapfile " + tarball_path + " restored")
+            snap.callback.snapcallback.message("Snapfile " + self.snapfile + " restored")
+
+        # restore the working directory
+        os.chdir(cwd)

@@ -15,9 +15,10 @@
 
 import os
 
-from snap.files import FileManager
+from snap.snapshottarget import SnapshotTarget
+from snap.filemanager import FileManager
 
-class Mock(snap.Target):
+class Mock(SnapshotTarget):
     '''mock implementation of the snap! packages target backend'''
 
     backup_called  = False
@@ -25,8 +26,8 @@ class Mock(snap.Target):
     
     def backup(self, basedir, include=[], exclude=[]):
         """simply flag that backup has been called"""
-        self.backup_called = True
+        Mock.backup_called = True
           
     def restore(self, basedir):
         """simply flag that restore has been called"""
-        self.restore_called = True
+        Mock.restore_called = True

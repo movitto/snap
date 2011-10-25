@@ -10,17 +10,17 @@ CONFIG_FILES=['/etc/snap.conf', '~/.snap']
 # a mapping of targets to default backends
 # on a per-os basis
 DEFAULT_BACKENDS = {
-  'mock'    => { 'repos'     => 'mock',
-                 'packages', => 'mock',
-                 'files',    => 'mock' },
+  'mock'    : { 'repos'    : 'mock',
+                'packages' : 'mock',
+                'files'    : 'mock' },
 
-  'fedora'  => { 'repos'     => 'yum',
-                 'packages', => 'yum',
-                 'files',    => 'yum' },
+  'fedora'  : { 'repos'    : 'syum',
+                'packages' : 'syum',
+                'files'    : 'syum' },
 
-  'ubuntu'  => {},
-  'gentoo'  => {},
-  'apple'   => {},
-  'windows' =>
+  'ubuntu'  : {},
+  'gentoo'  : {},
+  'apple'   : {},
+  'windows' : {}
 
 }

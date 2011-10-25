@@ -13,11 +13,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-import os, os.path
+import os
+import os.path
 import optparse, ConfigParser
 
 import snap
-from snapoptions import *
+from snap.options import *
+from snap.snapshottarget import SnapshotTarget
+from snap.exceptions import ArgError
 
 class ConfigOptions:
     """Container holding all the configuration options available
@@ -49,14 +52,14 @@ class ConfigOptions:
     def __init__(self):
         '''initialize configuration'''
         for backend in SnapshotTarget.BACKENDS:
-            target_backends[backend] = False
-            target_includes[backend] = []
-            target_excludes[backend] = []
+            self.target_backends[backend] = False
+            self.target_includes[backend] = []
+            self.target_excludes[backend] = []
 
-    def log_level_at_least(comparison):
-        return (comparison == 'quiet') or
-               (comparison == 'normal'  and self.log_level != 'quiet') or
-               (comparison == 'verbose' and (self.log_level == 'verbose' or self.log_level == 'debug')) or
+    def log_level_at_least(self, comparison):
+        return (comparison == 'quiet') or \
+               (comparison == 'normal'  and self.log_level != 'quiet') or \
+               (comparison == 'verbose' and (self.log_level == 'verbose' or self.log_level == 'debug')) or \
                (comparison == 'debug'   and self.log_level  == 'debug')
 
 class ConfigFile:
@@ -78,9 +81,9 @@ class ConfigFile:
         else:
             self.parser = ConfigParser.ConfigParser()
             self.parser.read(config_file)
-            self.parse()
+            self.__parse()
 
-    def __string_to_bool(string):
+    def string_to_bool(string):
         '''Static helper to convert a string to a boolean value'''
         if string == 'True' or string == 'true' or string == '1':
             return True
@@ -89,10 +92,10 @@ class ConfigFile:
         return None
     string_to_bool=staticmethod(string_to_bool)
 
-    def __string_to_array(string):
+    def string_to_array(string):
         '''Static helper to convert a colon deliminated string to an array of strings'''
         return string.split(':')
-    string_to_bool=staticmethod(string_to_array)
+    string_to_array=staticmethod(string_to_array)
 
     def __get_bool(self, key, section = 'main'):
         '''
@@ -104,7 +107,7 @@ class ConfigFile:
         '''
 
         try:
-            return Config.string_to_bool(self.parser.get(section, key))
+            return ConfigFile.string_to_bool(self.parser.get(section, key))
         except:
             return None
 
@@ -125,24 +128,28 @@ class ConfigFile:
     def __parse(self):
         '''parse configuration out of the config file'''
         for backend in SnapshotTarget.BACKENDS:
-            if val = get_bool(backend):
+            val = self.__get_bool(backend)
+            if val is not None:
                 snap.config.options.target_backends[backend] = val
 
-            elif val = get_string(i) 
-                snap.config.options.target_backends[backend] = True
-                val = Config.string_to_array(val)
-                for include in val:
-                    if include[0] == '!':
-                        snap.config.options.target_excludes[backend].append(include[1:])
-                    else:
-                        snap.config.options.target_includes[backend].append(include)
-                      
+            else:
+                val = self.__get_string(backend) 
+                if val:
+                    snap.config.options.target_backends[backend] = True
+                    val = ConfigFile.string_to_array(val)
+                    for include in val:
+                        if include[0] == '!':
+                            snap.config.options.target_excludes[backend].append(include[1:])
+                        else:
+                            snap.config.options.target_includes[backend].append(include)
 
-            elif cfg.get_bool('no' + backend):
-                snap.config.options.target_backends[i] = False
+                else:
+                    val = self.__get_bool('no' + backend)
+                    if val:
+                        snap.config.options.target_backends[backend] = False
 
-        sf = cfg.get_string('snapfile')
-        ll = cfg.get_string('log-level')
+        sf = self.__get_string('snapfile')
+        ll = self.__get_string('log-level')
         
         if sf != None:
             snap.config.options.snapfile = sf
@@ -192,7 +199,7 @@ class Config:
             if val != None:
                 if type(val) == str:
                     snap.config.options.target_backend[backend] = True
-                    val = Config.string_to_array(val)
+                    val = ConfigFile.string_to_array(val)
                     for include in val:
                         if include[0] == '!':
                             snap.config.options.target_excludes[backend].append(include[1:])
@@ -205,12 +212,12 @@ class Config:
         '''
         verify the integrity of the current option set
 
-        @raises - SnapArgError if the options are invalid
+        @raises - ArgError if the options are invalid
         '''
         if snap.config.options.mode == None: # mode not specified
-            raise snap.exceptions.SnapArgError("Must specify backup or restore")
+            raise snap.exceptions.ArgError("Must specify backup or restore")
         if snap.config.options.mode == ConfigOptions.RESTORE and snap.config.options.snapfile == DEFAULT_SNAPFILE: # need to specify snapfile when restoring
-            raise snap.exceptions.SnapArgError("Must specify snapfile")
+            raise snap.exceptions.ArgError("Must specify snapfile")
 
 # static shared options
 options=ConfigOptions()

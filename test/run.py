@@ -19,19 +19,24 @@ import sys
 sys.path.append("../snap/")
 
 import snap
-from callback import TestSystemCallback
-snap.callback.snapcallback = TestSystemCallback()
+import callback
 
-import snaptest
-import psatest
 import configtest
-import recordfilestest
+import filemanagertest
+import packagemetadatatest
+import sfilemetadatatest
+import snapfiletest
+import snaptest
+import yumbackendtest
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(configtest.ConfigTest))
+    suite.addTest(unittest.makeSuite(filemanagertest.FileManagerTest))
+    suite.addTest(unittest.makeSuite(packagemetadatatest.PackageMetadataTest))
+    suite.addTest(unittest.makeSuite(sfilemetadatatest.SFileMetadataTest))
+    suite.addTest(unittest.makeSuite(snapfiletest.SnapFileTest))
     suite.addTest(unittest.makeSuite(snaptest.SnapBaseTest))
-    suite.addTest(unittest.makeSuite(psatest.PackageSystemAdaptorTest))
-    suite.addTest(unittest.makeSuite(configtest.ConfigManagerTest))
-    suite.addTest(unittest.makeSuite(recordfilestest.RecordFilesTest))
+    suite.addTest(unittest.makeSuite(yumbackendtest.YumBackendTest))
     unittest.TextTestRunner(verbosity=2).run(suite)
 

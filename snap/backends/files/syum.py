@@ -14,11 +14,17 @@
 # GNU General Public License for more details.
 
 import os
+import yum
 
-class Yum(snap.Target):
+import snap
+from snap.filemanager    import FileManager
+from snap.metadata.sfile import SFile, FilesRecordFile
+
+class Syum(snap.snapshottarget.SnapshotTarget):
     '''implements the snap! files target backend using the yum package system'''
 
     def __init__(self):
+        self.yum = yum.YumBase();
         self.fs_root='/'
 
     def __file_modified(self,file_name):
@@ -52,7 +58,7 @@ class Yum(snap.Target):
         sfiles = []
         files = FileManager.get_all_files(include, exclude)
         for tfile in files:
-            if self.file_modified(tfile):
+            if self.__file_modified(tfile):
                 if snap.config.options.log_level_at_least('verbose'):
                     snap.callback.snapcallback.message("Backing up file " + tfile);
                 sfile = SFile(tfile)
@@ -78,4 +84,4 @@ class Yum(snap.Target):
         for sfile in sfiles:
             if snap.config.options.log_level_at_least('verbose'):
                 snap.callback.snapcallback.message("Restoring file " + sfile.path);
-            sfile.copy_to(fs_root, basedir)
+            sfile.copy_to(self.fs_root, basedir)

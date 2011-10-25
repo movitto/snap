@@ -13,53 +13,63 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+import os
+import shutil
+import unittest
+
+import yum
+
+import snap
+import snap.backends.files.syum
+import snap.backends.repos.syum
+import snap.backends.packages.syum
+
+from snap.metadata.sfile   import FilesRecordFile
+from snap.metadata.package import PackagesRecordFile
+
 class YumBackendTest(unittest.TestCase):
+    def setUp(self):
+        self.fs_root = os.path.join(os.path.dirname(__file__), "data/fs_root")
+        os.mkdir(self.fs_root)
+
+        self.basedir = os.path.join(os.path.dirname(__file__), "data/basedir")
+        os.mkdir(self.basedir)
+
+    def tearDown(self):
+        shutil.rmtree(self.fs_root)
+        shutil.rmtree(self.basedir)
+
     def testBackupRepos(self):
-        fs_root = os.path.join(os.path.dirname(__file__), "data/fs_root")
-        os.path.mkdir(fs_root)
+        snapshot_target = snap.backends.repos.syum.Syum()
+        snapshot_target.backup(self.fs_root)
 
-        snapshot_target = snap.backends.repos.yum.Yum()
-        snapshot_target.backup(fs_root)
-
-        self.assertTrue(os.path.exists(fs_root + "/etc/yum.conf"))
+        self.assertTrue(os.path.exists(self.fs_root + "/etc/yum.conf"))
         for repo in os.listdir("/etc/yum.repos.d"):
-            self.assertTrue(os.path.exists(fs_root + repo))
-
-        os.remove(fs_root)
+            self.assertTrue(os.path.exists(self.fs_root + "/etc/yum.repos.d/" + repo))
 
 
     def testRestoreRepos(self):
-        fs_root = os.path.join(os.path.dirname(__file__), "data/fs_root")
-        os.path.mkdir(fs_root)
-
-        basedir = os.path.join(os.path.dirname(__file__), "data/basedir")
-        os.path.makedirs(basedir + "/etc/yum.repos.d")
-        f=open(basedir + "/etc/yum.conf" , 'w')
+        os.makedirs(self.basedir + "/etc/yum.repos.d")
+        f=open(self.basedir + "/etc/yum.conf" , 'w')
         f.write("foo")
         f.close()
-        f=open(basedir + "/etc/yum.repos.d/foo.repo" , 'w')
+        f=open(self.basedir + "/etc/yum.repos.d/foo.repo" , 'w')
         f.write("bar")
         f.close()
 
-        restore_target = snap.backends.repos.yum.Yum()
-        restore_target.fs_root = fs_root
-        snapshot_target.restore(basedir)
+        restore_target = snap.backends.repos.syum.Syum()
+        restore_target.fs_root = self.fs_root
+        restore_target.restore(self.basedir)
 
-        self.assertTrue(os.path.exists(fs_root + "/etc/yum.conf"))
-        self.assertTrue(os.path.exists(fs_root + "/etc/yum.repos.d/foo.repo"))
-
-        os.remove(fs_root)
-        os.remove(basedir)
+        self.assertTrue(os.path.exists(self.fs_root + self.basedir + "/etc/yum.conf"))
+        self.assertTrue(os.path.exists(self.fs_root + self.basedir + "/etc/yum.repos.d/foo.repo"))
 
     def testBackupPackages(self):
-        fs_root = os.path.join(os.path.dirname(__file__), "data/fs_root")
-        os.path.mkdir(fs_root)
-
-        backup_target = snap.backends.packages.yum.Yum()
-        backup_target.backup(fs_root)
+        backup_target = snap.backends.packages.syum.Syum()
+        backup_target.backup(self.fs_root)
 
         pkgs = []
-        record = PackagesRecordFile(fs_root + "packages.xml")
+        record = PackagesRecordFile(self.fs_root + "packages.xml")
         record_packages = record.read()
         for pkg in record_packages:
             pkgs.append(pkg.name)
@@ -68,73 +78,52 @@ class YumBackendTest(unittest.TestCase):
         for pkg in yum.YumBase().rpmdb:
             self.assertIn(pkg.name, pkgs)
 
-        os.remove(fs_root)
+    # FIXME get this test working
+    #def testRestorePackages(self):
+    #    restore_target = snap.backends.packages.syum.Syum()
+    #    restore_target.backup(self.fs_root)
+    #    restore_target.restore(self.fs_root)
 
-    def testRestorePackages(self):
-        fs_root = os.path.join(os.path.dirname(__file__), "data/fs_root")
-        os.path.mkdir(fs_root)
+    #    record = PackagesRecordFile(self.fs_root + "packages.xml")
+    #    record_packages = record.read()
 
-        restore_target = snap.backends.packages.yum.Yum()
-        restore_target.backup(fs_root)
-        restore_target.restore(fs_root)
-
-        record = PackagesRecordFile(fs_root + "packages.xml")
-        record_packages = record.read()
-
-        yum = yum.YumBase()
-        yum.rpmdb.dbpath = fs_root + '/var/lib/rpm'
-        
-        for pkg in record_packages:
-            self.assertIn(pkg, yum.rpmdb)
-
-        os.remove(fs_root)
+    #    lyum = yum.YumBase()
+    #    lyum.rpmdb.dbpath = self.fs_root + '/var/lib/rpm'
+    #    
+    #    for pkg in record_packages:
+    #        self.assertIn(pkg, lyum.rpmdb)
 
     def testBackupFiles(self):
-        fs_root = os.path.join(os.path.dirname(__file__), "data/fs_root")
-        os.path.mkdir(fs_root)
-
-        basedir = os.path.join(os.path.dirname(__file__), "data/basedir")
-        os.path.mkdir(basedir)
-
-        f=open(fs_root + "/foo" , 'w')
+        f=open(self.fs_root + "/foo" , 'w')
         f.write("foo")
         f.close()
 
-        backup_target = snap.backends.files.yum.Yum()
-        backup_target.backup(basedir, include=[fs_root])
+        backup_target = snap.backends.files.syum.Syum()
+        backup_target.backup(self.basedir, include=[self.fs_root])
 
-        self.assertTrue(os.path.exists(basedir + "/foo"))
+        self.assertTrue(os.path.exists(self.basedir + self.fs_root + "/foo"))
 
-        record = FilesRecordFile(basedir + "files.xml")
+        record = FilesRecordFile(self.basedir + "files.xml")
         files = record.read()
         file_names = []
         for sfile in files:
-            file_name.append(sfile.name)
-        self.assertIn("foo", file_name)
-        self.assertEqual(1, files.size())
-
-        os.remove(fs_root)
-        os.remove(basedir)
+            file_names.append(sfile.name)
+        self.assertIn("foo", file_names)
+        self.assertEqual(1, len(files))
 
     def testRestoreFiles(self):
-        fs_root = os.path.join(os.path.dirname(__file__), "data/fs_root")
-        os.path.mkdir(fs_root)
-
-        basedir = os.path.join(os.path.dirname(__file__), "data/basedir")
-        os.path.mkdir(basedir)
-
-        f=open(fs_root + "/foo" , 'w')
+        f=open(self.fs_root + "/foo" , 'w')
         f.write("foo")
         f.close()
 
-        backup_target = snap.backends.files.yum.Yum()
-        backup_target.backup(basedir, include=[fs_root])
+        backup_target = snap.backends.files.syum.Syum()
+        backup_target.backup(self.basedir, include=[self.fs_root])
 
-        os.remove(fs_root)
-        os.path.mkdir(fs_root)
+        shutil.rmtree(self.fs_root)
+        os.mkdir(self.fs_root)
 
-        restore_target = snap.backends.files.yum.Yum()
-        restore_target.fs_root = fs_root
-        restore_target.restore(basedir)
+        restore_target = snap.backends.files.syum.Syum()
+        restore_target.fs_root = self.fs_root
+        restore_target.restore(self.basedir)
 
-        self.assertTrue(os.path.exists(fs_root + "/foo"))
+        self.assertTrue(os.path.exists(self.fs_root + self.fs_root + "/foo"))

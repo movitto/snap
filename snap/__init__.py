@@ -14,13 +14,14 @@
 # GNU General Public License for more details.
 
 import os
+import imp
 import time
 
 import snap
+from snap.osregistry        import OS
 from snap.exceptions        import InsufficientPermissionError
-from snap.filesmanager      import FileManager
+from snap.filemanager       import FileManager
 from snap.metadata.snapfile import SnapFile
-from snap.configmanager     import ConfigOptions
 
 class SnapBase:
     def __init__(self, snapfile_id=None):
@@ -45,22 +46,21 @@ class SnapBase:
         '''
         backends = []
 
-        os = OS.lookup()
-        for target in self.config.options.target_backends.keys():
-            if self.config.options.target_backend[target]:
-                backend = OS.default_backend_for_target(os, target)
-                self.config.options.target_backends[target] = backend
+        current_os = OS.lookup()
+        for target in snap.config.options.target_backends.keys():
+            if snap.config.options.target_backends[target]:
+                backend = OS.default_backend_for_target(current_os, target)
+                snap.config.options.target_backends[target] = backend
 
                 # Dynamically load the module
-                backend_file = os.path.dirname(__file__) + '/backends/' + target + '/' + backend + '.py'
-                module_name, ext = os.path.splitext(backend_file)
-                module_location = imp.find_module(module_name)
-                module = imp.load_module(module_name, *module_location)
-                globals()[module_name] = module
+                backend_module_name = "snap.backends." + target + "." + backend
+                class_name =  backend.capitalize()
+                backend_module = __import__(backend_module_name, globals(), locals(), [class_name])
 
-                # Dynamically instantiate the class
-                classobj = eval(module_name + '.' + backend.capitalize())
-                backends.append(classobj())
+                # instantiate the backend class
+                backend_class = getattr(backend_module, class_name)
+                backend_instance = backend_class()
+                backends.append(backend_instance)
 
         return backends
 
@@ -87,7 +87,7 @@ class SnapBase:
         for backend in backends:
           backend.backup(self.construct_dir) # FIXME include/exclude targets support
 
-        SnapFile(self.config.options.snapfile + '-' + self.snapfile_id + '.tgz', self.construct_dir).compress()
+        SnapFile(snap.config.options.snapfile + '-' + self.snapfile_id + '.tgz', self.construct_dir).compress()
         if snap.config.options.log_level_at_least('normal'):
             snap.callback.snapcallback.message("Snapshot completed")
 
@@ -101,7 +101,7 @@ class SnapBase:
         self.check_permission()
         FileManager.make_dir(self.construct_dir)
         backends = self.load_backends()
-        SnapFile(self.config.options.snapfile, self.construct_dir).extract()
+        SnapFile(snap.config.options.snapfile, self.construct_dir).extract()
 
         for backend in backends:
           backend.restore(self.construct_dir)

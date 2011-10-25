@@ -13,7 +13,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+import os
 import unittest
+
+from snap.filemanager import FileManager
 
 class FileManagerTest(unittest.TestCase):
     def testRmAndExists(self):
@@ -34,31 +37,31 @@ class FileManagerTest(unittest.TestCase):
     def testMakeDirAndExists(self):
         temp_dir_path = os.path.join(os.path.dirname(__file__), "data/temp-dir")
 
-        FileManager.mkdir(temp_dir_path)
+        FileManager.make_dir(temp_dir_path)
         self.assertTrue(os.path.exists(temp_dir_path))
         self.assertTrue(os.path.isdir(temp_dir_path))
         self.assertTrue(FileManager.exists(temp_dir_path))
         
-        os.remove(temp_dir_path)
+        os.removedirs(temp_dir_path)
         self.assertFalse(os.path.exists(temp_dir_path))
         self.assertFalse(FileManager.exists(temp_dir_path))
 
     def testGetAllFiles(self):
         data_path = os.path.join(os.path.dirname(__file__), "data/tmp")
         files = FileManager.get_all_files(include_dirs=[data_path])
-        self.assertIn(data_path + "file1", files)
-        self.assertIn(data_path + "subdir/file2", files)
+        self.assertIn(data_path + "/file1", files)
+        self.assertIn(data_path + "/subdir/file2", files)
 
-        files = FileManager.get_all_files(include_dirs=[data_path], exclude_dirs=[data_path+'subdir'])
-        self.assertIn(data_path + "file1", files)
-        self.assertNotIn(data_path + "subdir/file2", files)
+        files = FileManager.get_all_files(include_dirs=[data_path], exclude_dirs=[data_path+'/subdir'])
+        self.assertIn(data_path + "/file1", files)
+        self.assertNotIn(data_path + "/subdir/file2", files)
 
     def testGetAllSubdirectories(self):
         data_path = os.path.join(os.path.dirname(__file__), "data/")
         subdirs = FileManager.get_all_subdirectories(data_path, recursive=True)
-        self.assertIn("tmp", subdirs)
-        self.assertIn("tmp/subdir", subdirs)
+        self.assertIn(data_path + "tmp", subdirs)
+        self.assertIn(data_path + "tmp/subdir", subdirs)
 
         subdirs = FileManager.get_all_subdirectories(data_path, recursive=False)
-        self.assertIn("tmp", subdirs)
-        self.assertNotIn("tmp/subdir", subdirs)
+        self.assertIn(data_path + "tmp", subdirs)
+        self.assertNotIn(data_path + "tmp/subdir", subdirs)

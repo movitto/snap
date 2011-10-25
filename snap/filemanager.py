@@ -39,7 +39,8 @@ class FileManager:
         '''
 
         try:
-            os.mkdir(target)
+            if not os.path.isdir(target):
+                os.mkdir(target)
         except:
             raise snap.exceptions.FilesystemError("Could not make directory " + target)
     make_dir = staticmethod(make_dir)
@@ -64,22 +65,22 @@ class FileManager:
             for name in os.listdir(directory):
                 fullpath = os.path.join(directory, name)
                 # add all files in the directory
-                if os.path.isfile(fullpath) and not os.path.islink(fullpath) and
+                if os.path.isfile(fullpath) and not os.path.islink(fullpath) and \
                    not fullpath in files:
                        files.append(fullpath)
 
             # iterate over all subdirectories
-            subdirs = get_all_subdirectories(directory)
+            subdirs = FileManager.get_all_subdirectories(directory)
             for subdirectory in subdirs:
                 fullpath = os.path.join(directory, subdirectory)
                 # exclude those in the exclude list
                 if not os.path.islink(fullpath) and not fullpath in exclude_dirs:
-                    subdir_files = get_all_files([fullpath], exclude_dirs)
+                    subdir_files = FileManager.get_all_files([fullpath], exclude_dirs)
                     # add all files in the subdirectory
                     for subdir_file in subdir_files:
                         if not subdir_file in files:
                             files.append(subdir_file)
-         return files
+        return files
     get_all_files = staticmethod(get_all_files)
 
     def get_all_subdirectories(directory='/', recursive = False):
@@ -89,17 +90,17 @@ class FileManager:
         '''
         subdirs = []
         # iterate over all files in directory
-        for item in os.listdir(directory)
-            fullpath = os.path.join(dirs[i],name)
+        for item in os.listdir(directory):
+            fullpath = os.path.join(directory,item)
             # get subdirectories
-            if os.path.isdir(fullpath) and not os.path.islink(fullpath) and
+            if os.path.isdir(fullpath) and not os.path.islink(fullpath) and \
                not fullpath in subdirs:
                    subdirs.append(fullpath)
                    # recusrively iterate over subdirectories
                    if recursive:
-                       subsubdirs = get_all_subdirectories(fullpath)
+                       subsubdirs = FileManager.get_all_subdirectories(fullpath)
                        for subsubdir in subsubdirs:
                            if not subsubdir in subdirs:
                                subdirs.append(subsubdir)
-         return subdirs
-    get_all_sub_directories = staticmethod(get_all_sub_directories)
+        return subdirs
+    get_all_subdirectories = staticmethod(get_all_subdirectories)
