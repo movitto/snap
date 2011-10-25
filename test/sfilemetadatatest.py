@@ -14,6 +14,7 @@
 # GNU General Public License for more details.
 
 import os
+import shutil
 import unittest
 
 from snap.metadata.sfile import SFile, FilesRecordFile
@@ -31,6 +32,7 @@ class SFileMetadataTest(unittest.TestCase):
         f.close()
 
         self.assertEqual("<files><file>/some/path</file><file>/another/path</file></files>", contents)
+        os.remove(file_path)
 
     def testReadFilesRecordFile(self):
         file_path = os.path.join(os.path.dirname(__file__), "data/recordfile.xml")
@@ -42,29 +44,45 @@ class SFileMetadataTest(unittest.TestCase):
         self.assertIn('/tmp/subdir/file2', file_paths)
 
     def testSFileCopyTo(self):
-        basedir   = os.path.join(os.path.dirname(__file__), "data")
-        source_dir = basedir + "/source/subdir/"
-        dest_dir   = basedir + "/dest/"
-        temp_file_path = source_dir + "foo"
-        os.makedirs(source_dir)
+        basedir    = os.path.join(os.path.dirname(__file__), "data")
+        source_dir = basedir + "/source/subdir"
+        dest_dir   = basedir + "/dest"
 
-        f=open(temp_file_path, 'w')
+        os.makedirs(source_dir)
+        f=open(source_dir + "/foo", 'w')
         f.write("foo")
         f.close()
 
-        sfile = SFile(path=temp_file_path)
-        sfile.copy_to(basedir)
-        self.assertTrue(os.path.exists(temp_file_path))
+        dest_file = dest_dir + source_dir + "/foo"
 
-        f=open(temp_file_path, 'r')
+        sfile = SFile(path=source_dir + "/foo")
+        sfile.copy_to(dest_dir)
+        self.assertTrue(os.path.exists(dest_file))
+
+        f=open(dest_file, 'r')
         contents = f.read()
         f.close()
 
         self.assertEqual("foo", contents)
 
+        shutil.rmtree(source_dir)
+        shutil.rmtree(dest_dir)
+
+    def testSFileCopyToWithPrefix(self):
+        basedir    = os.path.join(os.path.dirname(__file__), "data")
+        source_dir = basedir + "/source/subdir"
+        dest_dir   = basedir + "/dest"
+
+        os.makedirs(source_dir)
+        f=open(source_dir + "/foo", 'w')
+        f.write("foo")
+        f.close()
+
+        dest_file = dest_dir + "/source/subdir/foo"
+
         sfile = SFile(path="/source/subdir/foo")
         sfile.copy_to(dest_dir, path_prefix=basedir)
-        self.assertTrue(os.path.exists(temp_file_path))
+        self.assertTrue(os.path.exists(dest_file))
 
-        os.remove(temp_file_path)
-        os.removedirs(source_dir)
+        shutil.rmtree(source_dir)
+        shutil.rmtree(dest_dir)

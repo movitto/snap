@@ -46,7 +46,7 @@ class Syum(snap.snapshottarget.SnapshotTarget):
                 packages.append(Package(pkg.name, pkg.version))
 
         # write record file to basedir
-        record = PackagesRecordFile(basedir + "packages.xml")
+        record = PackagesRecordFile(basedir + "/packages.xml")
         record.write(packages)
 
     def restore(self, basedir):
@@ -97,7 +97,7 @@ class Syum(snap.snapshottarget.SnapshotTarget):
     	  #    self.runTransaction(cb)
 
         # read files from the record file
-        record = PackagesRecordFile(basedir + "packages.xml")
+        record = PackagesRecordFile(basedir + "/packages.xml")
         packages = record.read()
 
         # handle kernel modules first

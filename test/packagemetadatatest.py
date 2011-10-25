@@ -32,6 +32,7 @@ class PackageMetadataTest(unittest.TestCase):
         f.close()
 
         self.assertEqual("<packages><package>foo</package><package>baz</package><package>bar</package></packages>", contents)
+        os.remove(file_path)
 
     def testReadPackageRecordFile(self):
         file_path = os.path.join(os.path.dirname(__file__), "data/packagefile.xml")

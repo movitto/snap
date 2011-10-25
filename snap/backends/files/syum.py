@@ -66,7 +66,7 @@ class Syum(snap.snapshottarget.SnapshotTarget):
                 sfiles.append(sfile)
 
         # write record file to basedir
-        record = FilesRecordFile(basedir + "files.xml")
+        record = FilesRecordFile(basedir + "/files.xml")
         record.write(sfiles)
 
 
@@ -77,7 +77,7 @@ class Syum(snap.snapshottarget.SnapshotTarget):
             snap.callback.snapcallback.message("Restoring files using yum backend");
 
         # read files from the record file
-        record = FilesRecordFile(basedir + "files.xml")
+        record = FilesRecordFile(basedir + "/files.xml")
         sfiles = record.read()
 
         # restore those to their original locations

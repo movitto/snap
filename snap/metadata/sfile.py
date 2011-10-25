@@ -44,8 +44,8 @@ class SFile(object):
            @param path_prefix - an optional prefix to prepend to the sfile path'''
         if not os.path.isdir(basedir + self.directory):
             os.makedirs(basedir + self.directory)
-            shutil.copystat(self.directory, basedir + self.directory)
-            ofs = os.stat(self.directory)
+            shutil.copystat(path_prefix + self.directory, basedir + self.directory)
+            ofs = os.stat(path_prefix + self.directory)
             os.chown(basedir + self.directory, ofs.st_uid, ofs.st_gid)
 
         shutil.copyfile(path_prefix + self.path, basedir + self.path)

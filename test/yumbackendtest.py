@@ -69,7 +69,7 @@ class YumBackendTest(unittest.TestCase):
         backup_target.backup(self.fs_root)
 
         pkgs = []
-        record = PackagesRecordFile(self.fs_root + "packages.xml")
+        record = PackagesRecordFile(self.fs_root + "/packages.xml")
         record_packages = record.read()
         for pkg in record_packages:
             pkgs.append(pkg.name)
@@ -103,7 +103,7 @@ class YumBackendTest(unittest.TestCase):
 
         self.assertTrue(os.path.exists(self.basedir + self.fs_root + "/foo"))
 
-        record = FilesRecordFile(self.basedir + "files.xml")
+        record = FilesRecordFile(self.basedir + "/files.xml")
         files = record.read()
         file_names = []
         for sfile in files:
