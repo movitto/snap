@@ -16,12 +16,12 @@
 from distutils.core import setup
 
 setup(name = 'snap',
-	version='0.1',
+	version='0.5',
 	description = 'system snapshotter and restoration utility',
 	author = 'Mo Morsi',
 	author_email = 'mo@morsi.org',
 	url = 'http://morsi.org/projects/snap',
 	packages = ['snap'],
 	data_files = [("/etc", ["resources/snap.conf"]), 
-			('/usr/share/snap/', ['resources/snap.glade']),
+			('/usr/share/snap/', ['resources/snap.glade'])],
 	scripts = ["bin/snaptool", "bin/gsnap"] )
