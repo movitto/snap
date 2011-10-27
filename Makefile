@@ -5,7 +5,7 @@ export PYTHONPATH='.'
 export HELP2MAN=help2man
 
 all:
-	$(PYTHON) bin/setup.py build
+	$(PYTHON) setup.py build
 
 doc:
 	test -d docs/api || mkdir docs/api
@@ -15,7 +15,7 @@ man:
 	PYTHONPATH=$(PYTHONPATH) $(HELP2MAN) -N -o docs/man1/snap.man bin/snaptool
 
 install:
-	$(PYTHON) bin/setup.py install --root=$(DESTDIR)
+	$(PYTHON) setup.py install --root=$(DESTDIR)
 	cp docs/man1/snap.man $(DESTDIR)/usr/share/man/man1/
 
 clean:
@@ -31,6 +31,9 @@ package:
 rpm: package
 	cp build/snap-$(VERSION).tgz ~/rpmbuild/SOURCES
 	rpmbuild -ba contrib/fedora/snap.spec
+
+deb:
+	debuild -us -uc
 
 distclean: clean
 
