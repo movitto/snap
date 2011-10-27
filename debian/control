@@ -1,0 +1,19 @@
+Source: snap
+Section: admin
+Priority: optional
+Maintainer: Mo Morsi <mo@morsi.org>
+Build-Depends: debhelper (>= 7.0.50~), cdbs, python, python-support
+Standards-Version: 3.9.1
+Homepage: http://projects.morsi.org/snap
+#Vcs-Git: git://git.debian.org/collab-maint/snap.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/snap.git;a=summary
+
+Package: snap
+Architecture: all
+Depends: python, python-support (>= 0.90)
+Description: a system backup/restoration utility
+ an extensible system snapshotter utility which uses the
+ underlying package management system to take and restore
+ snapshots of repositories, packages, and files. Snap may
+ be extended by defining additional snapshot targets to
+ backup / restore on a user's command
