@@ -78,7 +78,8 @@ class BackupOperationWindow:
        self.builder = Gtk.Builder() 
        self.builder.add_objects_from_file(GLADE_FILE, 
           [ "backup_options",      "backup_snapfile",        "backup_log_level", 
-            "backup_repos_toggle", "backup_packages_toggle", "backup_files_toggle"])
+            "backup_repos_toggle", "backup_packages_toggle", "backup_files_toggle",
+            "backup_encryption_toggle", "backup_encryption_key"])
        self.window = self.builder.get_object("backup_options") 
                                         
        # map the gui signals
@@ -131,12 +132,28 @@ class BackupOperationWindow:
         self.window.hide()
         ModeSelectionWindow.get_instance().show()
 
+    def backup_encryption_toggled(self, widget):
+        key = self.builder.get_object("backup_encryption_key")
+        key.set_visible(widget.get_active())
+
+    def backup_encryption_key_focus_in(self, widget, param):
+        if widget.get_text() == "Password":
+            widget.set_text("")
+            widget.set_visibility(False)
+
+    def backup_encryption_key_focus_out(self, widget, param):
+        if widget.get_text() == "":
+            widget.set_text("Password")
+            widget.set_visibility(True)
+
 
 # The backup operation window
 class RestoreOperationWindow:
     def __init__(self):
        self.builder = Gtk.Builder() 
-       self.builder.add_objects_from_file(GLADE_FILE, ["restore_options", "restore_snapfile", "restore_log_level"])
+       self.builder.add_objects_from_file(GLADE_FILE,
+         ["restore_options", "restore_snapfile", "restore_log_level",
+          "restore_encryption_toggle", "restore_encryption_key"])
        self.window = self.builder.get_object("restore_options") 
                                         
        # map the gui signals
@@ -172,6 +189,20 @@ class RestoreOperationWindow:
     def close_restore_window(self, widget):
         self.window.hide()
         ModeSelectionWindow.get_instance().show()
+
+    def restore_encryption_toggled(self, widget):
+        key = self.builder.get_object("restore_encryption_key")
+        key.set_visible(widget.get_active())
+
+    def restore_encryption_key_focus_in(self, widget):
+        if widget.get_text() == "Password":
+            widget.set_text("")
+            widget.set_visibility(False)
+
+    def restore_encryption_key_focus_out(self, widget):
+        if widget.get_text() == "":
+            widget.set_text("Password")
+            widget.set_visibility(True)
 
 # The help dialog
 class HelpDialog:

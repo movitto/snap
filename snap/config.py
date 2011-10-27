@@ -26,31 +26,35 @@ class ConfigOptions:
     """Container holding all the configuration options available
        to the Snap system"""
 
-    # mode of operation
-    mode=None
-
     # modes of operation
     RESTORE = 0
     BACKUP  = 1
 
-    # mapping of targets to lists of backends to use when backing up / restoring them
-    target_backends={}
-
-    # mapping of targets to lists of entities to include when backing up
-    target_includes={}
-
-    # mapping of targets to lists of entities to exclude when backing up
-    target_excludes={}
-
-    # output log level
-    # currently supports 'quiet', 'normal', 'verbose', 'debug'
-    log_level='normal'
-
-    # location of the snapfile to backup to / restore from
-    snapfile=DEFAULT_SNAPFILE
-
     def __init__(self):
         '''initialize configuration'''
+
+        # mode of operation
+        self.mode=None
+
+        # mapping of targets to lists of backends to use when backing up / restoring them
+        self.target_backends={}
+
+        # mapping of targets to lists of entities to include when backing up
+        self.target_includes={}
+
+        # mapping of targets to lists of entities to exclude when backing up
+        self.target_excludes={}
+
+        # output log level
+        # currently supports 'quiet', 'normal', 'verbose', 'debug'
+        self.log_level='normal'
+
+        # location of the snapfile to backup to / restore from
+        self.snapfile=DEFAULT_SNAPFILE
+
+        # Encryption/decryption password to use, if left as None, encryption will be disabled
+        self.encryption_password=None
+
         for backend in SnapshotTarget.BACKENDS:
             self.target_backends[backend] = False
             self.target_includes[backend] = []
@@ -148,13 +152,16 @@ class ConfigFile:
                     if val:
                         snap.config.options.target_backends[backend] = False
 
-        sf = self.__get_string('snapfile')
-        ll = self.__get_string('log-level')
+        sf  = self.__get_string('snapfile')
+        ll  = self.__get_string('loglevel')
+        enp = self.__get_string('encryption_password')
         
         if sf != None:
             snap.config.options.snapfile = sf
         if ll != None:
             snap.config.options.log_level = ll
+        if enp != None:
+            snap.config.options.encryption_password = enp
 
 class Config:
     """The configuration manager, used to set and verify snap config values 
@@ -180,6 +187,7 @@ class Config:
         self.parser.add_option('', '--backup', dest = 'backup', action='store_true', default=False, help='Take snapshot')
         self.parser.add_option('-l', '--log-level', dest = 'log_level', action='store', default="normal", help='Log level (quiet, normal, verbose, debug)')
         self.parser.add_option('-f', '--snapfile', dest = 'snapfile', action='store', default=None, help='Snapshot file')
+        self.parser.add_option('-p', '--password',  dest = 'encryption_password',  action='store', default=None, help='Snapshot File Encryption/Decryption Password')
         for backend in SnapshotTarget.BACKENDS:
             self.parser.add_option('', '--'   + backend, dest = backend, action='store', default=None, help='Enable '  + backend + ' snapshots/restoration')
             self.parser.add_option('', '--no' + backend, dest = backend, action='store_false', default=False, help='Disable ' + backend + ' snapshots/restoration')
@@ -193,6 +201,8 @@ class Config:
             snap.config.options.log_level=options.log_level
         if options.snapfile != None:
             snap.config.options.snapfile=options.snapfile
+        if options.encryption_password != None:
+            snap.config.options.encryption_password=options.encryption_password
         for backend in SnapshotTarget.BACKENDS:
             val = getattr(options, backend)
             if val != None:

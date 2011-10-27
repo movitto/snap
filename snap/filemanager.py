@@ -15,6 +15,7 @@
 
 
 import os
+import shutil
 import snap.exceptions
 
 class FileManager:
@@ -30,6 +31,17 @@ class FileManager:
         except:
             raise snap.exceptions.FilesystemError("Could not remove file " + target)
     rm = staticmethod(rm)
+
+    def mv(source, dest):
+        '''move specified source file to dest
+
+        @param source - path to the file to move
+        @param dest - path to the location to move the file to'''
+        try:
+            shutil.move(source, dest)
+        except:
+            raise snap.exceptions.FilesystemError("Could not move the file " + source + " to " + dest)
+    mv = staticmethod(mv)
 
     def make_dir(target):
         '''create the specified directory - static method

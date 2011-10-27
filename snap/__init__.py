@@ -82,7 +82,9 @@ class SnapBase:
         for backend in backends:
           backend.backup(construct_dir) # FIXME include/exclude targets support
 
-        SnapFile(snap.config.options.snapfile, construct_dir).compress()
+        SnapFile(snapfile=snap.config.options.snapfile, 
+                 snapdirectory=construct_dir,
+                 encryption_password=snap.config.options.encryption_password).compress()
         if snap.config.options.log_level_at_least('normal'):
             snap.callback.snapcallback.message("Snapshot completed")
 
@@ -102,7 +104,9 @@ class SnapBase:
         FileManager.make_dir(construct_dir)
 
         backends = self.load_backends()
-        SnapFile(snap.config.options.snapfile, construct_dir).extract()
+        SnapFile(snapfile=snap.config.options.snapfile,
+                 snapdirectory=construct_dir,
+                 encryption_password=snap.config.options.encryption_password).extract()
 
         for backend in backends:
           backend.restore(construct_dir)

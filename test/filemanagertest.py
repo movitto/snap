@@ -32,7 +32,21 @@ class FileManagerTest(unittest.TestCase):
         FileManager.rm(temp_file_path)
         self.assertFalse(os.path.exists(temp_file_path))
         self.assertFalse(FileManager.exists(temp_file_path))
-        pass
+
+    def testMv(self):
+        temp_source_file_path = os.path.join(os.path.dirname(__file__), "data/temp-source-file")
+        temp_dest_file_path   = os.path.join(os.path.dirname(__file__), "data/temp-dest-file")
+
+        f=open(temp_source_file_path, 'w')
+        f.write("foo")
+        f.close()
+        self.assertTrue(os.path.isfile(temp_source_file_path))
+
+        FileManager.mv(temp_source_file_path, temp_dest_file_path)
+        self.assertFalse(os.path.isfile(temp_source_file_path))
+        self.assertTrue(os.path.isfile(temp_dest_file_path))
+
+        os.remove(temp_dest_file_path)
 
     def testMakeDirAndExists(self):
         temp_dir_path = os.path.join(os.path.dirname(__file__), "data/temp-dir")

@@ -87,6 +87,7 @@ class ConfigTest(unittest.TestCase):
 
         self.assertEqual('/tmp/test-snap-shot', snap.config.options.snapfile)
         self.assertEqual('quiet', snap.config.options.log_level)
+        self.assertEqual('foobar', snap.config.options.encryption_password)
         pass
 
     def testValidateMode(self):

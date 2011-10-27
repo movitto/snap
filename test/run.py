@@ -22,6 +22,7 @@ import snap
 import callback
 
 import configtest
+import cryptotest
 import filemanagertest
 import packagemetadatatest
 import sfilemetadatatest
@@ -32,6 +33,7 @@ import yumbackendtest
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(configtest.ConfigTest))
+    suite.addTest(unittest.makeSuite(cryptotest.CryptoTest))
     suite.addTest(unittest.makeSuite(filemanagertest.FileManagerTest))
     suite.addTest(unittest.makeSuite(packagemetadatatest.PackageMetadataTest))
     suite.addTest(unittest.makeSuite(sfilemetadatatest.SFileMetadataTest))

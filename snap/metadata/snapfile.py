@@ -18,6 +18,7 @@ import os
 import tarfile
 
 import snap
+from snap.crypto      import Crypto
 from snap.filemanager import FileManager
 from snap.exceptions  import MissingDirError
 
@@ -25,17 +26,24 @@ class SnapFile:
     """The snapfile, the end result of the backup operation
        and input into the restore operation. This is a tar guziped archive."""
 
-    def __init__(self, snapfile, snapdirectory):
+    def __init__(self, snapfile, snapdirectory, encryption_password=None):
         '''initialize the snapfile
 
         @param snapfile - the path to the snapfile to create / read
         @param snapdirectory - the path to the directory to compress/extract
+        @param encryption_password - the password to use in the encryption/decryption operations, if set to None encryption will be disabled
         @raises - MissingDirError - if the snapdirectory is invalid
         '''
         if not os.path.isdir(snapdirectory):
             raise MissingDirError(snapdirectory + " is an invalid snap working directory ")
         self.snapfile = snapfile
         self.snapdirectory = snapdirectory
+        self.encryption_password=encryption_password
+
+        if self.encryption_password != None:
+            self.encryption_key = Crypto.generate_key(self.encryption_password)
+        else:
+            self.encryption_key = None
 
     def __prepare_file_for_tarball(tarball, fullpath):
         '''set attributes of a file for inclusion in a tarball'''
@@ -71,6 +79,11 @@ class SnapFile:
         # finish up tarball creation
         tarball.close()
 
+        # encrypt the snapshot if we've set a key
+        if self.encryption_key != None:
+            Crypto.encrypt_file(self.encryption_key, self.snapfile, self.snapfile + ".enc")
+            FileManager.mv(self.snapfile + ".enc", self.snapfile)
+
         if snap.config.options.log_level_at_least('normal'):
             snap.callback.snapcallback.message("Snapfile " + self.snapfile + " created")
 
@@ -82,6 +95,11 @@ class SnapFile:
         
         @raises - MissingFileError if the snapfile does not exist
         '''
+
+        # decrypt the file if we've set a key
+        if self.encryption_key != None:
+            Crypto.decrypt_file(self.encryption_key, self.snapfile, self.snapfile + ".dec")
+            FileManager.mv(self.snapfile + ".dec", self.snapfile)
 
         # open the tarball
         tarball = tarfile.open(self.snapfile) 
