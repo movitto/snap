@@ -1,10 +1,15 @@
 export VERSION=0.5
 export PYTHON = python
+export PYDOC  = pydoc
 export PYTHONPATH='.'
 export HELP2MAN=help2man
 
 all:
 	$(PYTHON) bin/setup.py build
+
+doc:
+	test -d docs/api || mkdir docs/api
+	cd docs/api/ ; $(PYDOC) -w ../../
 
 man:
 	PYTHONPATH=$(PYTHONPATH) $(HELP2MAN) -N -o docs/man1/snap.man bin/snaptool
