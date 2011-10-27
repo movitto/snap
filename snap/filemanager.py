@@ -45,6 +45,21 @@ class FileManager:
             raise snap.exceptions.FilesystemError("Could not make directory " + target)
     make_dir = staticmethod(make_dir)
 
+    def rm_dir(target):
+        '''remove the specified directory - static method
+
+        @param target - the path to the directory to remove
+        @raises FileSystemError - if the directory could not be removed
+        '''
+
+        try:
+            if os.path.isdir(target):
+                os.removedirs(target)
+        except:
+            raise snap.exceptions.FilesystemError("Could not remove directory " + target)
+    rm_dir = staticmethod(rm_dir)
+
+
     def exists(path):
         '''return true if the file specified by the given path exists, else false
 

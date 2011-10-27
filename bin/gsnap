@@ -14,6 +14,7 @@
 # GNU General Public License for more details.
 
 import sys
+import time
 #import threading
 
 #GLADE_FILE="/usr/share/snap/snap-redux.glade"
@@ -24,185 +25,170 @@ import snap.callback
 #from snap.exceptions import *
 #from snap.configmanager import ConfigManager
 
-try:
-    import pygtk
-    pygtk.require("2.0")
-except:
-    pass
-try:
-    import gtk
-    import gtk.glade
-except:
-     sys.exit(1)
+from gi.repository import Gtk
 
 # The main window
 class ModeSelectionWindow:
 
-     @classmethod
-     def set_instance(cls, instance):
-        '''store a singleton instance of this window for future reference'''
-        cls.instance = instance
+    @classmethod
+    def set_instance(cls, instance):
+       '''store a singleton instance of this window for future reference'''
+       cls.instance = instance
 
-     @classmethod
-     def get_instance(cls):
-         '''get singleton instance of this class'''
-         return cls.instance
+    @classmethod
+    def get_instance(cls):
+        '''get singleton instance of this class'''
+        return cls.instance
 
-     def __init__(self):
-        self.wTree = gtk.glade.XML(GLADE_FILE, "mode_selection") 
-                                         
-        # map the gui signals
-        dic = { "show_backup_window"   : self.show_backup_window,
-                "show_restore_window"  : self.show_restore_window,
-                "show_help_dialog"     : self.show_help_dialog,
-                "close_window"         : self.close_window}
-        self.wTree.signal_autoconnect(dic)
+    def __init__(self):
+       ModeSelectionWindow.set_instance(self)
 
-        self.dlg = self.wTree.get_widget("mode_selection")
-        
-        ModeSelectionWindow.set_instance(self)
-     
-     def run(self):
-         self.dlg.show()
+       self.builder = Gtk.Builder() 
+       self.builder.add_objects_from_file(GLADE_FILE, ["mode_selection"])
 
-     def show_backup_window(self, widget):
-         window = BackupOperationWindow()
-         self.dlg.hide()
-         window.run()
+       self.window = self.builder.get_object("mode_selection") 
+                                        
+       # map the gui signals
+       self.builder.connect_signals(self)
+       self.window.connect("destroy", Gtk.main_quit)
+    
+    def show(self):
+        self.window.show()
 
-     def show_restore_window(self, widget):
-         window = RestoreOperationWindow()
-         self.dlg.hide()
-         window.run()
+    def show_backup_window(self, widget):
+        backup_window = BackupOperationWindow()
+        self.window.hide()
+        backup_window.show()
 
-     def show_help_dialog(self, widget):
-         dlg = HelpDialog()
-         dlg.run()
+    def show_restore_window(self, widget):
+        restore_window = RestoreOperationWindow()
+        self.window.hide()
+        restore_window.show()
 
-     def close_window(self, widget):
-         gtk.main_quit
+    def show_help_dialog(self, widget):
+        help_dialog = HelpDialog()
+        help_dialog.show()
+
+    def close_window(self, widget):
+        Gtk.main_quit()
 
 # The backup operation window
 class BackupOperationWindow:
     def __init__(self):
-       self.wTree = gtk.glade.XML(GLADE_FILE, "backup_options") 
+       self.builder = Gtk.Builder() 
+       self.builder.add_objects_from_file(GLADE_FILE, 
+          [ "backup_options",      "backup_snapfile",        "backup_log_level", 
+            "backup_repos_toggle", "backup_packages_toggle", "backup_files_toggle"])
+       self.window = self.builder.get_object("backup_options") 
                                         
        # map the gui signals
-       dic = { "start_backup"           : self.start_backup,
-               "close_backup_window"    : self.close_backup_window }
-       self.wTree.signal_autoconnect(dic)
-
-       self.dlg = self.wTree.get_widget("backup_options")
+       self.builder.connect_signals(self)
+       self.window.connect("destroy", self.close_backup_window)
 
        self._setup_log_levels()
 
-    def run(self):
-       self.dlg.show()
+       # XXX bit of a hack, since GtkFileChooserButton will not currently allow
+       #  use to operate in 'save' mode, eg where the user can create a new file,
+       #  we create a temporary one and set it here for the time being
+       # https://bugzilla.gnome.org/show_bug.cgi?id=662837
+       self.snapbase = snap.SnapBase()
+       snapfile_id = time.strftime('%m.%d.%Y-%H.%M.%S')
+       snapfile = snap.options.DEFAULT_SNAPFILE + "-" + snapfile_id + ".tgz"
+       file(snapfile, "w")
+       self.builder.get_object("backup_snapfile").set_filename(snapfile)
+
+    def show(self):
+       self.window.show()
 
     def _setup_log_levels(self):
-        combobox = self.wTree.get_widget("backup_log_level")
+        combobox = self.builder.get_object("backup_log_level")
         combobox.append_text("quiet")
         combobox.append_text("normal")
         combobox.append_text("verbose")
         combobox.append_text("debug")
 
-    def _get_log_level(self):
-        combobox = self.wTree.get_widget("backup_log_level")
-        model    = combobox.get_model()
-        active   = combobox.get_active()
-        if active < 0:
-            return "normal"
-        return model[active][0]
-
     def _get_config(self):
-        snap.config.options.log_level = self._get_log_level()
-        snap.config.options.snapfile  = self.wTree.get_widget("backup_snapfile").get_text()
+        snap.config.options.log_level = self.builder.get_object("backup_log_level").get_active_text()
+        snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_text()
 
-        if self.wTree.get_widget("backup_repos_toggle").get_active():
+        if self.builder.get_object("backup_repos_toggle").get_active():
             snap.config.options.target_backends['repos'] = True
-        if self.wTree.get_widget("backup_packages_toggle").get_active():
+        if self.builder.get_object("backup_packages_toggle").get_active():
             snap.config.options.target_backends['packages'] = True
-        if self.wTree.get_widget("backup_files_toggle").get_active():
+        if self.builder.get_object("backup_files_toggle").get_active():
             snap.config.options.target_backends['files'] = True
 
     def start_backup(self, widget):
+        OutputDialog.get_instance().show()
         conf = snap.config.Config()
         conf.read_config()
         self._get_config()
         conf.verify_integrity()
-        snapbase = snap.SnapBase()
-        snapbase.backup()
+        self.snapbase.backup()
+        OutputDialog.get_instance().quit_when_closed = True
 
     def close_backup_window(self, widget):
-        self.dlg.hide()
-        ModeSelectionWindow.get_instance().run()
+        self.window.hide()
+        ModeSelectionWindow.get_instance().show()
 
 
 # The backup operation window
 class RestoreOperationWindow:
     def __init__(self):
-       self.wTree = gtk.glade.XML(GLADE_FILE, "restore_options") 
+       self.builder = Gtk.Builder() 
+       self.builder.add_objects_from_file(GLADE_FILE, ["restore_options", "restore_snapfile", "restore_log_level"])
+       self.window = self.builder.get_object("restore_options") 
                                         
        # map the gui signals
-       dic = { "start_restore"          : self.start_restore,
-               "close_restore_window"   : self.close_restore_window }
-       self.wTree.signal_autoconnect(dic)
-
-       self.dlg = self.wTree.get_widget("restore_options")
+       self.builder.connect_signals(self)
+       self.window.connect("destroy", self.close_restore_window)
 
        self._setup_log_levels()
 
-    def run(self):
-       self.dlg.show()
+    def show(self):
+       self.window.show()
 
     def _setup_log_levels(self):
-        combobox = self.wTree.get_widget("backup_log_level")
+        combobox = self.builder.get_object("restore_log_level")
         combobox.append_text("quiet")
         combobox.append_text("normal")
         combobox.append_text("verbose")
         combobox.append_text("debug")
 
-    def _get_log_level(self):
-        combobox = self.wTree.get_widget("restore_log_level")
-        model    = combobox.get_model()
-        active   = combobox.get_active()
-        if active < 0:
-            return "normal"
-        return model[active][0]
-
     def _get_config(self):
-        snap.config.options.log_level = self._get_log_level()
-        snap.config.options.snapfile  = self.wTree.get_widget("backup_snapfile").get_text()
+        snap.config.options.log_level = self.builder.get_object("restore_log_level").get_active_text()
+        snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_text()
 
     def start_restore(self, widget):
+        OutputDialog.get_instance().show()
         conf = snap.config.Config()
         conf.read_config()
         self._get_config()
         conf.verify_integrity()
         snapbase = snap.SnapBase()
         snapbase.restore()
+        OutputDialog.get_instance().quit_when_closed = True
 
     def close_restore_window(self, widget):
-        self.dlg.hide()
-        ModeSelectionWindow.get_instance().run()
+        self.window.hide()
+        ModeSelectionWindow.get_instance().show()
 
 # The help dialog
 class HelpDialog:
     def __init__(self):
-       self.wTree = gtk.glade.XML(GLADE_FILE, "help_window") 
+       self.builder = Gtk.Builder() 
+       self.builder.add_objects_from_file(GLADE_FILE, ["help_window"])
+       self.window = self.builder.get_object("help_window") 
                                         
        # map the gui signals
-       dic = { "close_help_dialog"      : self.close_help_dialog}
-       self.wTree.signal_autoconnect(dic)
+       self.builder.connect_signals(self)
 
-       self.dlg = self.wTree.get_widget("help_window")
-
-    def run(self):
-       self.dlg.show()
+    def show(self):
+       self.window.show()
 
     def close_help_dialog(self, widget):
-        self.dlg.hide()
-        ModeSelectionWindow.get_instance().run()
+        self.window.hide()
+        ModeSelectionWindow.get_instance().show()
 
 # The output dialog
 class OutputDialog:
@@ -217,24 +203,29 @@ class OutputDialog:
         return cls.instance
 
     def __init__(self):
-       self.wTree = gtk.glade.XML(GLADE_FILE, "output_window") 
-
-       # map the gui signals
-       dic = { "close_output_dialog"      : self.close_dialog}
-       self.wTree.signal_autoconnect(dic)
-
-       # set the output buffer
-       snap.callback.snapcallback.set_output_buffer(self.wTree.get_widget("output_text").get_buffer())
-
-       self.dlg = self.wTree.get_widget("output_window")
-
        OutputDialog.set_instance(self)
 
-    def run(self):
-       self.dlg.show()
+       self.builder = Gtk.Builder() 
+       self.builder.add_objects_from_file(GLADE_FILE, ["output_window", "output_text"])
+       self.window = self.builder.get_object("output_window") 
 
-    def close_dialog(self, widget):
-        self.dlg.hide()
+       # map the gui signals
+       #dic = { "close_output_dialog"      : self.close_dialog}
+       self.builder.connect_signals(self)
+
+       # set the output buffer
+       snap.callback.snapcallback.set_output_buffer(self.builder.get_object("output_text").get_buffer())
+
+       self.quit_when_closed = False
+
+    def show(self):
+       self.window.show()
+
+    def close_output_dialog(self, widget):
+        if self.quit_when_closed:
+            Gtk.main_quit()
+        else:
+            self.window.hide()
 
 
 # Redirect callback text to main window
@@ -246,12 +237,12 @@ class GSnapCallback(snap.callback.Callback):
         # always show the output dialog on new text
         OutputDialog.get_instance().run()
 
-        gtk.gdk.threads_enter()
+        Gtk.gdk.threads_enter()
         nl = ''
         if self.outputbuffer.get_char_count() != 0:
             nl = '\n'
         self.outputbuffer.insert(self.outputbuffer.get_end_iter(), nl + newtext)
-        gtk.gdk.threads_leave()
+        Gtk.gdk.threads_leave()
 
     def message(self, msg):
         self._append_to_buffer(msg)
@@ -269,9 +260,7 @@ if __name__ == "__main__":
 
     # initialize windows
     OutputDialog()
-    ModeSelectionWindow().run()
-    #threading.Thread(target=self.run).start()
+    ModeSelectionWindow().show()
 
     # start gtk loop
-    gtk.gdk.threads_init()
-    gtk.main()
+    Gtk.main()

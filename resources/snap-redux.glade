@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <requires lib="gtk+" version="2.20"/>
+  <!-- interface-requires gtk+ 3.0 -->
   <object class="GtkWindow" id="backup_options">
     <property name="can_focus">False</property>
     <child>
-      <object class="GtkBox" id="box3">
+      <object class="GtkVBox" id="box3">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="margin_bottom">20</property>
-        <property name="orientation">vertical</property>
         <child>
           <object class="GtkFrame" id="frame1">
             <property name="visible">True</property>
@@ -22,12 +21,11 @@
                 <property name="can_focus">False</property>
                 <property name="left_padding">12</property>
                 <child>
-                  <object class="GtkBox" id="box5">
+                  <object class="GtkVBox" id="box5">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkBox" id="box6">
+                      <object class="GtkHBox" id="box6">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
@@ -43,7 +41,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBox" id="backup_log_level">
+                          <object class="GtkComboBoxText" id="backup_log_level">
                             <property name="width_request">340</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
@@ -63,7 +61,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkBox" id="box7">
+                      <object class="GtkHBox" id="box7">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
@@ -86,7 +84,6 @@
                             <property name="can_focus">False</property>
                             <property name="margin_left">25</property>
                             <property name="margin_top">10</property>
-                            <property name="action">save</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -172,7 +169,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkBox" id="box4">
+          <object class="GtkHBox" id="box4">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="halign">end</property>
@@ -214,6 +211,41 @@
             <property name="fill">True</property>
             <property name="position">1</property>
           </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkFileChooserDialog" id="filechooserdialog1">
+    <property name="can_focus">False</property>
+    <property name="border_width">5</property>
+    <property name="type_hint">dialog</property>
+    <property name="action">save</property>
+    <property name="do_overwrite_confirmation">True</property>
+    <child internal-child="vbox">
+      <object class="GtkBox" id="filechooserdialog-vbox1">
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox" id="filechooserdialog-action_area1">
+            <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
         </child>
       </object>
     </child>
@@ -264,9 +296,13 @@
 
 It may be easily extended by defining additional snapshot and restoration targets to interface with the underlying system which then are invoked in sequence on a user's request.
 
-To use simply select mode of operation, backup or restore and selected the snapfile which to backup to or restore from as well as which target entities which to backup.
+To use, simply select mode of operation, backup or restore, and then select the snapfile which to backup to or restore from as well as any optional parameters.
 
-It's that simple!</property>
+It's that simple!
+
+Snap is written by Mo Morsi (mo@morsi.org)
+
+http://projects.morsi.org/snap</property>
             <property name="justify">fill</property>
             <property name="wrap">True</property>
             <attributes>
@@ -288,17 +324,15 @@ It's that simple!</property>
   <object class="GtkWindow" id="mode_selection">
     <property name="can_focus">False</property>
     <child>
-      <object class="GtkBox" id="box1">
+      <object class="GtkVBox" id="box1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="margin_bottom">15</property>
-        <property name="orientation">vertical</property>
         <child>
           <object class="GtkImage" id="main_logo">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_bottom">15</property>
-            <property name="pixbuf">resources/snap.png</property>
+            <property name="pixbuf">/home/mmorsi/workspace/snap/resources/snap.png</property>
           </object>
           <packing>
             <property name="expand">True</property>
@@ -307,9 +341,22 @@ It's that simple!</property>
           </packing>
         </child>
         <child>
-          <object class="GtkBox" id="box2">
+          <object class="GtkSeparator" id="separator1">
+            <property name="height_request">5</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="box2">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="margin_top">5</property>
             <child>
               <object class="GtkButton" id="backup_mode_button">
                 <property name="label" translatable="yes">Backup</property>
@@ -386,7 +433,7 @@ It's that simple!</property>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">1</property>
+            <property name="position">2</property>
           </packing>
         </child>
       </object>
@@ -433,9 +480,6 @@ It's that simple!</property>
             <property name="height_request">250</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="hexpand">True</property>
-            <property name="vexpand">True</property>
-            <property name="vscroll_policy">natural</property>
             <property name="editable">False</property>
           </object>
           <packing>
@@ -453,11 +497,10 @@ It's that simple!</property>
   <object class="GtkWindow" id="restore_options">
     <property name="can_focus">False</property>
     <child>
-      <object class="GtkBox" id="box8">
+      <object class="GtkVBox" id="box8">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="margin_bottom">20</property>
-        <property name="orientation">vertical</property>
         <child>
           <object class="GtkFrame" id="frame2">
             <property name="visible">True</property>
@@ -471,12 +514,11 @@ It's that simple!</property>
                 <property name="can_focus">False</property>
                 <property name="left_padding">12</property>
                 <child>
-                  <object class="GtkBox" id="box9">
+                  <object class="GtkVBox" id="box9">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkBox" id="box10">
+                      <object class="GtkHBox" id="box10">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
@@ -492,7 +534,7 @@ It's that simple!</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBox" id="restore_log_level">
+                          <object class="GtkComboBoxText" id="restore_log_level">
                             <property name="width_request">340</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
@@ -512,7 +554,7 @@ It's that simple!</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkBox" id="box11">
+                      <object class="GtkHBox" id="box11">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
@@ -569,7 +611,7 @@ It's that simple!</property>
           </packing>
         </child>
         <child>
-          <object class="GtkBox" id="box12">
+          <object class="GtkHBox" id="box12">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="halign">end</property>

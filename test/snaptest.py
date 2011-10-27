@@ -23,7 +23,7 @@ from snap.osregistry import OS
 
 class SnapBaseTest(unittest.TestCase):
     def setUp(self):
-        self.snapbase = snap.SnapBase(snapfile_id='snap-test')
+        self.snapbase = snap.SnapBase()
 
         self.orig_os_lookup = OS.lookup
         OS.lookup = types.MethodType(SnapBaseTest.new_os_lookup, OS)
@@ -33,9 +33,13 @@ class SnapBaseTest(unittest.TestCase):
                                                'packages' : True,
                                                'files'    : True }
 
+        self.orig_snapfile = snap.config.options.snapfile
+        snap.config.options.snapfile += "-snap-test.tgz"
+
     def tearDown(self):
         OS.lookup = self.orig_os_lookup
-        snap.config.target_backends = self.orig_target_backends
+        snap.config.target_backends  = self.orig_target_backends
+        snap.config.options.snapfile = self.orig_snapfile
 
     def testInsufficientPermssions(self):
         restoreeuid = False
@@ -77,15 +81,14 @@ class SnapBaseTest(unittest.TestCase):
         self.assertTrue(snap.backends.packages.mock.Mock.backup_called)
         self.assertTrue(snap.backends.files.mock.Mock.backup_called)
 
-        self.assertTrue(os.path.exists(snap.config.options.snapfile + "-snap-test.tgz"))
-        os.remove(snap.config.options.snapfile + "-snap-test.tgz")
+        self.assertTrue(os.path.exists(snap.config.options.snapfile))
+        os.remove(snap.config.options.snapfile)
 
 
     def testRestore(self):
         # to generate the snapfile
         self.snapbase.backup()
 
-        snap.config.options.snapfile = snap.config.options.snapfile + "-snap-test.tgz"
         self.snapbase.restore()
 
         self.assertTrue(snap.backends.repos.mock.Mock.restore_called)

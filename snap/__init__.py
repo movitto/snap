@@ -15,7 +15,6 @@
 
 import os
 import imp
-import time
 
 import snap
 from snap.osregistry        import OS
@@ -24,18 +23,10 @@ from snap.filemanager       import FileManager
 from snap.metadata.snapfile import SnapFile
 
 class SnapBase:
-    def __init__(self, snapfile_id=None):
+    def __init__(self):
         '''initialize snap '''
 
-        # grab timestamp if nothing else
-        if snapfile_id == None:
-            snapfile_id = time.strftime('%m.%d.%Y-%H.%M.%S')
 
-        # unique snapfile identifier
-        self.snapfile_id = snapfile_id
-
-        # temp directory used to construct tarball 
-        self.construct_dir = '/tmp/snap-' + self.snapfile_id
 
     def load_backends(self):
         '''
@@ -82,14 +73,20 @@ class SnapBase:
             snap.callback.snapcallback.message("Creating snapshot")
 
         self.check_permission()
-        FileManager.make_dir(self.construct_dir)
+
+        # temp directory used to construct tarball 
+        construct_dir = '/tmp/snap-' + snap.config.options.snapfile.replace("/", "-") + ".d"
+        FileManager.make_dir(construct_dir)
+
         backends = self.load_backends()
         for backend in backends:
-          backend.backup(self.construct_dir) # FIXME include/exclude targets support
+          backend.backup(construct_dir) # FIXME include/exclude targets support
 
-        SnapFile(snap.config.options.snapfile + '-' + self.snapfile_id + '.tgz', self.construct_dir).compress()
+        SnapFile(snap.config.options.snapfile, construct_dir).compress()
         if snap.config.options.log_level_at_least('normal'):
             snap.callback.snapcallback.message("Snapshot completed")
+
+        FileManager.rm_dir(construct_dir)
 
     def restore(self):
         '''
@@ -99,12 +96,18 @@ class SnapBase:
             snap.callback.snapcallback.message("Restoring Snapshot")
 
         self.check_permission()
-        FileManager.make_dir(self.construct_dir)
+
+        # temp directory used to construct tarball 
+        construct_dir = '/tmp/snap-' + snap.config.options.snapfile.replace("/", "-") + ".d"
+        FileManager.make_dir(construct_dir)
+
         backends = self.load_backends()
-        SnapFile(snap.config.options.snapfile, self.construct_dir).extract()
+        SnapFile(snap.config.options.snapfile, construct_dir).extract()
 
         for backend in backends:
-          backend.restore(self.construct_dir)
+          backend.restore(construct_dir)
 
         if snap.config.options.log_level_at_least('normal'):
             snap.callback.snapcallback.message("Restore completed")
+
+        FileManager.rm_dir(construct_dir)

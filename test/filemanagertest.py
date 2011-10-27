@@ -46,6 +46,13 @@ class FileManagerTest(unittest.TestCase):
         self.assertFalse(os.path.exists(temp_dir_path))
         self.assertFalse(FileManager.exists(temp_dir_path))
 
+    def testRmDir(self):
+        temp_dir_path = os.path.join(os.path.dirname(__file__), "data/temp-dir")
+
+        os.mkdir(temp_dir_path)
+        FileManager.rm_dir(temp_dir_path)
+        self.assertFalse(os.path.exists(temp_dir_path))
+
     def testGetAllFiles(self):
         data_path = os.path.join(os.path.dirname(__file__), "data/tmp")
         files = FileManager.get_all_files(include_dirs=[data_path])
