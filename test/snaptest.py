@@ -62,8 +62,8 @@ class SnapBaseTest(unittest.TestCase):
     def testLoadBackends(self):
         backends = self.snapbase.load_backends()
         backend_classes = []
-        for backend in backends:
-            backend_classes.append(backend.__class__)
+        for target in backends.keys():
+            backend_classes.append(backends[target].__class__)
 
         self.assertEqual('mock', snap.config.options.target_backends['repos'])
         self.assertEqual('mock', snap.config.options.target_backends['packages'])

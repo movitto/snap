@@ -35,7 +35,7 @@ class SnapBase:
         corresponding modules will be loaded out of the backends subdirectories
         and target classes instantiated and returned
         '''
-        backends = []
+        backends = {}
 
         current_os = OS.lookup()
         for target in snap.config.options.target_backends.keys():
@@ -51,7 +51,7 @@ class SnapBase:
                 # instantiate the backend class
                 backend_class = getattr(backend_module, class_name)
                 backend_instance = backend_class()
-                backends.append(backend_instance)
+                backends[target] = backend_instance
 
         return backends
 
@@ -79,8 +79,11 @@ class SnapBase:
         FileManager.make_dir(construct_dir)
 
         backends = self.load_backends()
-        for backend in backends:
-          backend.backup(construct_dir) # FIXME include/exclude targets support
+        for target in backends.keys():
+          backend = backends[target]
+          includes = snap.config.options.target_includes[target]
+          excludes = snap.config.options.target_excludes[target]
+          backend.backup(construct_dir,include=includes,exclude=excludes)
 
         SnapFile(snapfile=snap.config.options.snapfile, 
                  snapdirectory=construct_dir,
@@ -103,12 +106,13 @@ class SnapBase:
         construct_dir = '/tmp/snap-' + snap.config.options.snapfile.replace("/", "-") + ".d"
         FileManager.make_dir(construct_dir)
 
-        backends = self.load_backends()
         SnapFile(snapfile=snap.config.options.snapfile,
                  snapdirectory=construct_dir,
                  encryption_password=snap.config.options.encryption_password).extract()
 
-        for backend in backends:
+        backends = self.load_backends()
+        for target in backends.keys():
+          backend = backends[target]
           backend.restore(construct_dir)
 
         if snap.config.options.log_level_at_least('normal'):

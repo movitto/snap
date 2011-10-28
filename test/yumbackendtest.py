@@ -119,6 +119,42 @@ class YumBackendTest(unittest.TestCase):
         self.assertIn("foo", file_names)
         self.assertEqual(1, len(files))
 
+    def testBackupCertainFiles(self):
+        os.mkdir(self.fs_root + "/subdir1")
+        os.mkdir(self.fs_root + "/subdir1/subsubdir")
+        os.mkdir(self.fs_root + "/subdir2")
+
+        f=open(self.fs_root + "/subdir1/foo" , 'w')
+        f.write("foo")
+        f.close()
+
+        f=open(self.fs_root + "/subdir2/bar" , 'w')
+        f.write("bar")
+        f.close()
+
+        f=open(self.fs_root + "/subdir1/subsubdir/money" , 'w')
+        f.write("money")
+        f.close()
+
+        backup_target = snap.backends.files.syum.Syum()
+        backup_target.backup(self.basedir,
+                             include=[self.fs_root + "/subdir1"],
+                             exclude=[self.fs_root + "/subdir1/subsubdir"])
+
+        self.assertTrue(os.path.exists(self.basedir  + self.fs_root + "/subdir1/foo"))
+        self.assertFalse(os.path.exists(self.basedir + self.fs_root + "/subdir2/foo"))
+        self.assertFalse(os.path.exists(self.basedir + self.fs_root + "/subdir1/subsubdir/money"))
+
+        record = FilesRecordFile(self.basedir + "/files.xml")
+        files = record.read()
+        file_names = []
+        for sfile in files:
+            file_names.append(sfile.path)
+        self.assertEqual(1, len(files))
+        self.assertIn(self.fs_root + "/subdir1/foo", file_names)
+        self.assertNotIn(self.fs_root + "/subdir2/bar", file_names)
+        self.assertNotIn(self.fs_root + "/subdir1/subsubdir/bar", file_names)
+
     def testRestoreFiles(self):
         f=open(self.fs_root + "/foo" , 'w')
         f.write("foo")

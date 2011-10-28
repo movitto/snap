@@ -78,7 +78,8 @@ class BackupOperationWindow:
        self.builder = Gtk.Builder() 
        self.builder.add_objects_from_file(GLADE_FILE, 
           [ "backup_options",      "backup_snapfile",        "backup_log_level", 
-            "backup_repos_toggle", "backup_packages_toggle", "backup_files_toggle",
+            "backup_repos_toggle", "backup_packages_toggle",
+            "backup_files_toggle", "select_backup_files_button",
             "backup_encryption_toggle", "backup_encryption_key"])
        self.window = self.builder.get_object("backup_options") 
                                         
@@ -122,6 +123,8 @@ class BackupOperationWindow:
             snap.config.options.target_backends['packages'] = True
         if self.builder.get_object("backup_files_toggle").get_active():
             snap.config.options.target_backends['files'] = True
+            snap.config.options.target_includes['files'] = BackupFilesSelectionWindow.get_instance().get_files()
+
 
     def start_backup(self, widget):
         OutputDialog.get_instance().show()
@@ -149,6 +152,14 @@ class BackupOperationWindow:
         if widget.get_text() == "":
             widget.set_text("Password")
             widget.set_visibility(True)
+
+    def backup_files_toggled(self, widget):
+        button = self.builder.get_object("select_backup_files_button")
+        button.set_visible(widget.get_active())
+
+    def select_backup_files_clicked(self, widget):
+        window = BackupFilesSelectionWindow()
+        window.show()
 
 
 # The backup operation window
@@ -266,6 +277,97 @@ class OutputDialog:
         else:
             self.window.hide()
 
+# Window to show/add/remove files which have been selected to backup 
+class BackupFilesSelectionWindow:
+    @classmethod
+    def set_instance(cls, instance):
+       '''store a singleton instance of this window for future reference'''
+       cls.instance = instance
+
+    @classmethod
+    def get_instance(cls):
+        '''get singleton instance of this class'''
+        return cls.instance
+
+    def __init__(self):
+        self.set_instance(self)
+
+        self.builder = Gtk.Builder()
+        self.builder.add_objects_from_file(GLADE_FILE,
+          ["backup_files_selection",
+           "backup_files_treeview", "backup_files_treeview_selection",
+           "backup_files_selection_remove", "backup_files_selection_add",
+           "backup_files_selection_close"])
+        self.window = self.builder.get_object("backup_files_selection")
+
+        # map the gui signals
+        self.builder.connect_signals(self)
+        self.window.connect("destroy", self.close_backup_files_selection)
+
+        # add a column to the treeview
+        self.liststore = Gtk.ListStore(str)
+        self.treeview = self.builder.get_object("backup_files_treeview")
+        col = Gtk.TreeViewColumn('File')
+        renderer = Gtk.CellRendererText()
+        col.pack_start(renderer, True)
+        col.add_attribute(renderer, "text", 0)
+        self.treeview.append_column(col)
+        self.treeview.set_model(self.liststore)
+
+    def show(self):
+       self.window.show()
+
+    # helper to add a list of filenames to window
+    def add_file_paths(self, file_paths=[]):
+        for path in file_paths:
+            self.liststore.append([path])
+
+    # helper to get list of filenames in window
+    def get_files(self):
+        files = []
+        for tfile in self.liststore:
+            files.append(tfile[0])
+        return files
+
+    def close_backup_files_selection(self, widget):
+        self.window.hide()
+
+    def backup_files_selection_changed(self, widget):
+        self.builder.get_object("backup_files_selection_remove"). \
+             set_sensitive(self.treeview.get_selection().count_selected_rows() > 0)
+
+    def add_backup_files(self, widget):
+        dialog = SelectDirectoryDialog()
+        dialog.show()
+
+    def remove_backup_files(self, widget):
+        selected, itr = self.treeview.get_selection().get_selected()
+        if itr:
+            self.liststore.remove(itr)
+
+# File chooser dialog to select directories to backup
+class SelectDirectoryDialog:
+    def __init__(self):
+        self.builder = Gtk.Builder()
+        self.builder.add_objects_from_file(GLADE_FILE,
+          ["select_directory_dialog",
+           "cancel_add_selected_directory", "add_selected_directory"])
+        self.window = self.builder.get_object("select_directory_dialog")
+
+        # map the gui signals
+        self.builder.connect_signals(self)
+        self.window.connect("destroy", self.close_select_directory_dialog)
+
+    def show(self):
+       self.window.show()
+
+    def add_selected_dir(self, widget):
+        filenames = self.window.get_filenames()
+        BackupFilesSelectionWindow.get_instance().add_file_paths(filenames)
+        self.window.hide()
+
+    def close_select_directory_dialog(self, widget):
+        self.window.hide()
 
 # Redirect callback text to main window
 class GSnapCallback(snap.callback.Callback):

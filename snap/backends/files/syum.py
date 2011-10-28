@@ -47,11 +47,14 @@ class Syum(snap.snapshottarget.SnapshotTarget):
 
         return False
 
-    def backup(self, basedir, include=['/'], exclude=[]):
+    def backup(self, basedir, include=[], exclude=[]):
         """backup the files modified outside the yum package system"""
 
         if snap.config.options.log_level_at_least('verbose'):
             snap.callback.snapcallback.message("Backing up files using yum backend");
+
+        if len(include) == 0:
+            include = ['/']
 
         # determine which files have been modified since installation
         #   and copy those to basedir
