@@ -112,6 +112,10 @@ class BackupOperationWindow:
         snap.config.options.log_level = self.builder.get_object("backup_log_level").get_active_text()
         snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_text()
 
+        password = self.builder.get_object("backup_encryption_key").get_text()
+        if password != "Password":
+            snap.config.options.encryption_password = password
+
         if self.builder.get_object("backup_repos_toggle").get_active():
             snap.config.options.target_backends['repos'] = True
         if self.builder.get_object("backup_packages_toggle").get_active():
@@ -175,6 +179,10 @@ class RestoreOperationWindow:
     def _get_config(self):
         snap.config.options.log_level = self.builder.get_object("restore_log_level").get_active_text()
         snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_text()
+
+        password = self.builder.get_object("restore_encryption_key").get_text()
+        if password != "Password":
+            snap.config.options.encryption_password = password
 
     def start_restore(self, widget):
         OutputDialog.get_instance().show()
