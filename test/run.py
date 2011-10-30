@@ -25,10 +25,12 @@ import configtest
 import cryptotest
 import filemanagertest
 import packagemetadatatest
+import servicesmetadatatest
 import sfilemetadatatest
 import snapfiletest
 import snaptest
 import yumbackendtest
+import servicedispatchertest
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
@@ -36,8 +38,10 @@ if __name__ == '__main__':
     suite.addTest(unittest.makeSuite(cryptotest.CryptoTest))
     suite.addTest(unittest.makeSuite(filemanagertest.FileManagerTest))
     suite.addTest(unittest.makeSuite(packagemetadatatest.PackageMetadataTest))
+    suite.addTest(unittest.makeSuite(servicesmetadatatest.ServicesMetadataTest))
     suite.addTest(unittest.makeSuite(sfilemetadatatest.SFileMetadataTest))
     suite.addTest(unittest.makeSuite(snapfiletest.SnapFileTest))
+    suite.addTest(unittest.makeSuite(servicedispatchertest.ServiceDispatcherTest))
     suite.addTest(unittest.makeSuite(snaptest.SnapBaseTest))
     suite.addTest(unittest.makeSuite(yumbackendtest.YumBackendTest))
     unittest.TextTestRunner(verbosity=2).run(suite)

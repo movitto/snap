@@ -12,11 +12,13 @@ CONFIG_FILES=['/etc/snap.conf', '~/.snap']
 DEFAULT_BACKENDS = {
   'mock'    : { 'repos'    : 'mock',
                 'packages' : 'mock',
-                'files'    : 'mock' },
+                'files'    : 'mock',
+                'services' : 'mock' },
 
   'fedora'  : { 'repos'    : 'syum',
                 'packages' : 'syum',
-                'files'    : 'syum' },
+                'files'    : 'syum',
+                'services' : 'dispatcher' },
 
   'ubuntu'  : {},
   'gentoo'  : {},

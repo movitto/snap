@@ -1,0 +1,5 @@
+<services>
+    <service>iptables</service>
+    <service>mysql</service>
+    <service>postgresql</service>
+</services>

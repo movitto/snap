@@ -31,7 +31,8 @@ class SnapBaseTest(unittest.TestCase):
         self.orig_target_backends = snap.config.options.target_backends
         snap.config.options.target_backends = {'repos'    : True,
                                                'packages' : True,
-                                               'files'    : True }
+                                               'files'    : True,
+                                               'services' : True }
 
         self.orig_snapfile = snap.config.options.snapfile
         snap.config.options.snapfile += "-snap-test.tgz"
@@ -68,10 +69,12 @@ class SnapBaseTest(unittest.TestCase):
         self.assertEqual('mock', snap.config.options.target_backends['repos'])
         self.assertEqual('mock', snap.config.options.target_backends['packages'])
         self.assertEqual('mock', snap.config.options.target_backends['files'])
+        self.assertEqual('mock', snap.config.options.target_backends['services'])
 
         self.assertIn(snap.backends.repos.mock.Mock,    backend_classes)
         self.assertIn(snap.backends.packages.mock.Mock, backend_classes)
         self.assertIn(snap.backends.files.mock.Mock,    backend_classes)
+        self.assertIn(snap.backends.services.mock.Mock, backend_classes)
 
 
     def testBackup(self):
@@ -80,6 +83,7 @@ class SnapBaseTest(unittest.TestCase):
         self.assertTrue(snap.backends.repos.mock.Mock.backup_called)
         self.assertTrue(snap.backends.packages.mock.Mock.backup_called)
         self.assertTrue(snap.backends.files.mock.Mock.backup_called)
+        self.assertTrue(snap.backends.services.mock.Mock.backup_called)
 
         self.assertTrue(os.path.exists(snap.config.options.snapfile))
         os.remove(snap.config.options.snapfile)
@@ -94,5 +98,6 @@ class SnapBaseTest(unittest.TestCase):
         self.assertTrue(snap.backends.repos.mock.Mock.restore_called)
         self.assertTrue(snap.backends.packages.mock.Mock.restore_called)
         self.assertTrue(snap.backends.files.mock.Mock.restore_called)
+        self.assertTrue(snap.backends.services.mock.Mock.restore_called)
 
         os.remove(snap.config.options.snapfile)

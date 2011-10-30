@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# test/sfilemetadatatest.py unit test suite for snap.metadata.sfile
+# test/sfilemetadatatest.py unit test suite for yum snap backends
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)
 #
@@ -30,9 +30,13 @@ from snap.metadata.package import PackagesRecordFile
 class YumBackendTest(unittest.TestCase):
     def setUp(self):
         self.fs_root = os.path.join(os.path.dirname(__file__), "data/fs_root")
+        if os.path.isdir(self.fs_root):
+            shutil.rmtree(self.fs_root)
         os.mkdir(self.fs_root)
 
         self.basedir = os.path.join(os.path.dirname(__file__), "data/basedir")
+        if os.path.isdir(self.basedir):
+            shutil.rmtree(self.basedir)
         os.mkdir(self.basedir)
 
     def tearDown(self):
