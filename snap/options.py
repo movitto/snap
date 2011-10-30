@@ -20,7 +20,18 @@ DEFAULT_BACKENDS = {
                 'files'    : 'syum',
                 'services' : 'dispatcher' },
 
+  'rhel'  :   { 'repos'    : 'syum',
+                'packages' : 'syum',
+                'files'    : 'syum',
+                'services' : 'dispatcher' },
+
+  'centos'  : { 'repos'    : 'syum',
+                'packages' : 'syum',
+                'files'    : 'syum',
+                'services' : 'dispatcher' },
+
   'ubuntu'  : {},
+  'debian'  : {},
   'gentoo'  : {},
   'apple'   : {},
   'windows' : {}
