@@ -29,7 +29,6 @@ import servicesmetadatatest
 import sfilemetadatatest
 import snapfiletest
 import snaptest
-import yumbackendtest
 import servicedispatchertest
 
 if __name__ == '__main__':
@@ -43,6 +42,14 @@ if __name__ == '__main__':
     suite.addTest(unittest.makeSuite(snapfiletest.SnapFileTest))
     suite.addTest(unittest.makeSuite(servicedispatchertest.ServiceDispatcherTest))
     suite.addTest(unittest.makeSuite(snaptest.SnapBaseTest))
-    suite.addTest(unittest.makeSuite(yumbackendtest.YumBackendTest))
+    
+    os = snap.osregistry.OS.lookup()
+    if os == 'fedora' or os == 'rhel' or os == 'centos':
+        import yumbackendtest
+        suite.addTest(unittest.makeSuite(yumbackendtest.YumBackendTest))
+    elif os == 'ubuntu' or os == 'debian':
+        import aptbackendtest
+        suite.addTest(unittest.makeSuite(aptbackendtest.AptBackendTest))
+
     unittest.TextTestRunner(verbosity=2).run(suite)
 

@@ -34,13 +34,13 @@ class OS:
     elif FileManager.exists('/etc/centos-release'):
       return 'centos'
 
-    elif FileManager.exists("/proc/version")
+    elif FileManager.exists("/proc/version"):
         f = file("/proc/version", "r")
         c = f.read()
         f.close()
         if len(re.findall('Ubuntu', c)) > 0:
             return 'ubuntu'
-        elif len(re.findall('Ubuntu', c)) > 0:
+        elif len(re.findall('Debian', c)) > 0:
             return 'debian'
 
     elif FileManager.exists('C:\\'):

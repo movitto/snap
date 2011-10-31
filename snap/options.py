@@ -30,8 +30,17 @@ DEFAULT_BACKENDS = {
                 'files'    : 'syum',
                 'services' : 'dispatcher' },
 
-  'ubuntu'  : {},
-  'debian'  : {},
+  'ubuntu'  : { 'repos'    : 'sapt',
+                'packages' : 'sapt',
+                'files'    : 'sapt',
+                'services' : 'dispatcher' },
+
+  'debian ' : { 'repos'    : 'sapt',
+                'packages' : 'sapt',
+                'files'    : 'sapt',
+                'services' : 'dispatcher' },
+
+
   'gentoo'  : {},
   'apple'   : {},
   'windows' : {}
