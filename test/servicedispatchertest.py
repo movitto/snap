@@ -182,15 +182,15 @@ class ServiceDispatcherTest(unittest.TestCase):
         shutil.move(snap.backends.services.adapters.postgresql.Postgresql.DATADIR + ".bak",
                     snap.backends.services.adapters.postgresql.Postgresql.DATADIR)
         # XXX dirty hack make sure the datadir is owned by postgres
-        if snap.backends.services.adapters.postgresql.Postgresql.current_os == 'ubuntu' or \
-           snap.backends.services.adapters.postgresql.Postgresql.current_os == 'debian':
-            data_dir=snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../../"
-            pg_user = pwd.getpwnam('postgres')
-            for root, dirs, files in os.walk(data_dir):
-                for d in dirs:
-                    os.chown(os.path.join(root, d), pg_user.pw_uid, pg_user.pw_gid) 
-                for f in files:
-                    os.chown(os.path.join(root, f), pg_user.pw_uid, pg_user.pw_gid) 
+        data_dir=snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../"
+        if os == "ubuntu" or os == "debian":
+            data_dir += "../"
+        pg_user = pwd.getpwnam('postgres')
+        for root, dirs, files in os.walk(data_dir):
+            for d in dirs:
+                os.chown(os.path.join(root, d), pg_user.pw_uid, pg_user.pw_gid)
+            for f in files:
+                os.chown(os.path.join(root, f), pg_user.pw_uid, pg_user.pw_gid)
 
         # cleanup, restore to original state
         if already_running:
@@ -272,16 +272,14 @@ class ServiceDispatcherTest(unittest.TestCase):
         shutil.move(snap.backends.services.adapters.mysql.Mysql.DATADIR + ".bak",
                     snap.backends.services.adapters.mysql.Mysql.DATADIR)
         # XXX dirty hack make sure the datadir is owned by postgres
-        if snap.backends.services.adapters.mysql.Mysql.current_os == 'ubuntu' or \
-           snap.backends.services.adapters.mysql.Mysql.current_os == 'debian':
-            data_dir=snap.backends.services.adapters.mysql.Mysql.DATADIR
-            my_user = pwd.getpwnam('mysql')
-            for root, dirs, files in os.walk(data_dir):
-                os.chown(root, my_user.pw_uid, my_user.pw_gid) 
-                for d in dirs:
-                    os.chown(os.path.join(root, d), my_user.pw_uid, my_user.pw_gid) 
-                for f in files:
-                    os.chown(os.path.join(root, f), my_user.pw_uid, my_user.pw_gid) 
+        data_dir=snap.backends.services.adapters.mysql.Mysql.DATADIR
+        my_user = pwd.getpwnam('mysql')
+        for root, dirs, files in os.walk(data_dir):
+            os.chown(root, my_user.pw_uid, my_user.pw_gid)
+            for d in dirs:
+                os.chown(os.path.join(root, d), my_user.pw_uid, my_user.pw_gid)
+            for f in files:
+                os.chown(os.path.join(root, f), my_user.pw_uid, my_user.pw_gid)
 
         # cleanup, restore to original state
         if already_running:

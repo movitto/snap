@@ -130,6 +130,10 @@ class Postgresql:
         if os == 'debian' or os == 'ubuntu':
             return
 
+        # if the datadir already exists, just return
+        if os.path.isdir(data_dir):
+            return
+
         null=open('/dev/null', 'w')
 
         # FIXME should run initdb manually
