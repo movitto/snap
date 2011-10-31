@@ -31,7 +31,7 @@ class Dispatcher(snap.snapshottarget.SnapshotTarget):
     def service_running(service):
         '''helper to return boolean indicating if the specified service is running'''
         out=open('/dev/null', 'w')
-        popen = subprocess.Popen(["service", service, "status"], stdout=out)
+        popen = subprocess.Popen(["service", service, "status"], stdout=out, stderr=out)
         popen.wait()
         return popen.returncode == 0
     service_running=staticmethod(service_running)
@@ -41,7 +41,7 @@ class Dispatcher(snap.snapshottarget.SnapshotTarget):
         
         @returns boolean indicating if service was started or not'''
         out=open('/dev/null', 'w')
-        popen = subprocess.Popen(["service", service, "start"], stdout=out)
+        popen = subprocess.Popen(["service", service, "start"], stdout=out, stderr=out)
         popen.wait()
         return popen.returncode == 0
     start_service=staticmethod(start_service)
@@ -51,7 +51,7 @@ class Dispatcher(snap.snapshottarget.SnapshotTarget):
         
         @returns boolean indicating if service was stopped or not'''
         out=open('/dev/null', 'w')
-        popen = subprocess.Popen(["service", service, "stop"], stdout=out)
+        popen = subprocess.Popen(["service", service, "stop"], stdout=out, stderr=out)
         popen.wait()
         return popen.returncode == 0
     stop_service=staticmethod(stop_service)

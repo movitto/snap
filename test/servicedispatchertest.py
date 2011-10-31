@@ -127,8 +127,9 @@ class ServiceDispatcherTest(unittest.TestCase):
     def testPostgresqlService(self):
         # can't use basedir as the postgres user needs access to this
         pdir = '/tmp/snap-postgres'
-        os.mkdir(pdir)
-        os.chmod(pdir, 0777)
+        if not os.path.isdir(pdir):
+            os.mkdir(pdir)
+            os.chmod(pdir, 0777)
 
         # first start the service if it isn't running
         already_running=Dispatcher.service_running('postgresql')
@@ -162,21 +163,34 @@ class ServiceDispatcherTest(unittest.TestCase):
 
         # stop the service, backup the datadir
         Dispatcher.stop_service('postgresql')
-        shutil.move("/var/lib/pgsql/data", "/var/lib/pgsql/data.bak")
+        shutil.copytree(snap.backends.services.adapters.postgresql.Postgresql.DATADIR, 
+                        snap.backends.services.adapters.postgresql.Postgresql.DATADIR + ".bak")
 
         # test restore
         backend.restore(pdir)
 
         # ensure service is running, datadir has been initialized
         self.assertTrue(Dispatcher.service_running('postgresql'))
-        self.assertTrue(os.path.isdir("/var/lib/pgsql"))
+        self.assertTrue(os.path.isdir(snap.backends.services.adapters.postgresql.Postgresql.DATADIR))
 
         # ensure the db exists
         self.assertTrue(snap.backends.services.adapters.postgresql.Postgresql.db_exists('snaptest'))
 
         # stop the service, restore the db
         Dispatcher.stop_service('postgresql')
-        shutil.move("/var/lib/pgsql/data.bak", "/var/lib/pgsql/data")
+        shutil.rmtree(snap.backends.services.adapters.postgresql.Postgresql.DATADIR)
+        shutil.move(snap.backends.services.adapters.postgresql.Postgresql.DATADIR + ".bak",
+                    snap.backends.services.adapters.postgresql.Postgresql.DATADIR)
+        # XXX dirty hack make sure the datadir is owned by postgres
+        if snap.backends.services.adapters.postgresql.Postgresql.current_os == 'ubuntu' or \
+           snap.backends.services.adapters.postgresql.Postgresql.current_os == 'debian':
+            data_dir=snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../../"
+            pg_user = pwd.getpwnam('postgres')
+            for root, dirs, files in os.walk(data_dir):
+                for d in dirs:
+                    os.chown(os.path.join(root, d), pg_user.pw_uid, pg_user.pw_gid) 
+                for f in files:
+                    os.chown(os.path.join(root, f), pg_user.pw_uid, pg_user.pw_gid) 
 
         # cleanup, restore to original state
         if already_running:
@@ -185,44 +199,45 @@ class ServiceDispatcherTest(unittest.TestCase):
         shutil.rmtree(pdir)
 
     def testMysqlDbExists(self):
-        is_running = Dispatcher.service_running('mysqld')
-        Dispatcher.start_service('mysqld')
-        self.assertTrue(snap.backends.services.adapters.mysql.Mysql.db_exists('test'))
+        is_running = Dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        Dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        self.assertTrue(snap.backends.services.adapters.mysql.Mysql.db_exists('mysql'))
         self.assertFalse(snap.backends.services.adapters.mysql.Mysql.db_exists('non-existant-db'))
         if not is_running:
-            Dispatcher.stop_service('mysqld')
+            Dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
 
     def testMysqlCreateDropDb(self):
-        is_running = Dispatcher.service_running('mysqld')
-        Dispatcher.start_service('mysqld')
+        is_running = Dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        Dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         snap.backends.services.adapters.mysql.Mysql.create_db('snap_test_db')
         self.assertTrue(snap.backends.services.adapters.mysql.Mysql.db_exists('snap_test_db'))
         snap.backends.services.adapters.mysql.Mysql.drop_db('snap_test_db')
         self.assertFalse(snap.backends.services.adapters.mysql.Mysql.db_exists('snap_test_db'))
         if not is_running:
-            Dispatcher.stop_service('mysqld')
+            Dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
 
     def testMysqlService(self):
         mdir = '/tmp/snap-mysql'
-        os.mkdir(mdir)
+        if not os.path.isdir(mdir):
+            os.mkdir(mdir)
 
         # first start the service if it isn't running
-        already_running=Dispatcher.service_running('mysqld')
+        already_running=Dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         if not already_running:
-            Dispatcher.start_service('mysqld')
+            Dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
 
         # create a test database
         snap.backends.services.adapters.mysql.Mysql.create_db('snaptest')
 
         # restore to original state
         if not already_running:
-            Dispatcher.stop_service('mysqld')
+            Dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
 
         backend = snap.backends.services.adapters.mysql.Mysql()
         backend.backup(mdir)
 
         # ensure the process is in its original state
-        currently_running=Dispatcher.service_running('mysqld')
+        currently_running=Dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         self.assertEqual(already_running, currently_running)
 
         # assert the db dump exists and has the db dump
@@ -233,31 +248,44 @@ class ServiceDispatcherTest(unittest.TestCase):
         self.assertEqual(1, len(re.findall('CREATE DATABASE.*snaptest', c)))
 
         # finally cleanup
-        Dispatcher.start_service('mysqld')
+        Dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         snap.backends.services.adapters.mysql.Mysql.drop_db('snaptest')
 
         # stop the service, backup the datadir
-        Dispatcher.stop_service('mysqld')
-        shutil.move("/var/lib/mysql", "/var/lib/mysql.bak")
+        Dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        shutil.copytree(snap.backends.services.adapters.mysql.Mysql.DATADIR,
+                        snap.backends.services.adapters.mysql.Mysql.DATADIR + ".bak")
 
         # test restore
         backend.restore(mdir)
 
         # ensure service is running, datadir has been initialized
-        self.assertTrue(Dispatcher.service_running('mysqld'))
-        self.assertTrue(os.path.isdir("/var/lib/mysql"))
+        self.assertTrue(Dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON))
+        self.assertTrue(os.path.isdir(snap.backends.services.adapters.mysql.Mysql.DATADIR))
 
         # ensure the db exists
         self.assertTrue(snap.backends.services.adapters.mysql.Mysql.db_exists('snaptest'))
 
         # stop the service, restore the db
-        Dispatcher.stop_service('mysqld')
-        shutil.rmtree('/var/lib/mysql')
-        shutil.move("/var/lib/mysql.bak", "/var/lib/mysql")
+        Dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        shutil.rmtree(snap.backends.services.adapters.mysql.Mysql.DATADIR)
+        shutil.move(snap.backends.services.adapters.mysql.Mysql.DATADIR + ".bak",
+                    snap.backends.services.adapters.mysql.Mysql.DATADIR)
+        # XXX dirty hack make sure the datadir is owned by postgres
+        if snap.backends.services.adapters.mysql.Mysql.current_os == 'ubuntu' or \
+           snap.backends.services.adapters.mysql.Mysql.current_os == 'debian':
+            data_dir=snap.backends.services.adapters.mysql.Mysql.DATADIR
+            my_user = pwd.getpwnam('mysql')
+            for root, dirs, files in os.walk(data_dir):
+                os.chown(root, my_user.pw_uid, my_user.pw_gid) 
+                for d in dirs:
+                    os.chown(os.path.join(root, d), my_user.pw_uid, my_user.pw_gid) 
+                for f in files:
+                    os.chown(os.path.join(root, f), my_user.pw_uid, my_user.pw_gid) 
 
         # cleanup, restore to original state
         if already_running:
-            Dispatcher.start_service('mysqld')
+            Dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
 
         shutil.rmtree(mdir)
 

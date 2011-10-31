@@ -20,7 +20,7 @@ import sets
 import snap
 from snap.metadata.package import Package, PackagesRecordFile
 
-class Syum(snap.snapshottarget.SnapshotTarget):
+class Sapt(snap.snapshottarget.SnapshotTarget):
     '''implements the snap! packages target backend using the apt package system'''
 
     def __init__(self):
@@ -39,7 +39,7 @@ class Syum(snap.snapshottarget.SnapshotTarget):
         packages=[]
         packagenames = set()
         for pkg in self.cache:
-            pkg_name = pkg.sourcePackageName 
+            pkg_name = pkg.name
             if pkg.is_installed and not pkg_name in packagenames:
                 if snap.config.options.log_level_at_least('verbose'):
                     snap.callback.snapcallback.message("Backing up package " + pkg_name)

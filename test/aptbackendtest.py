@@ -49,7 +49,8 @@ class AptBackendTest(unittest.TestCase):
 
         self.assertTrue(os.path.exists(self.fs_root + "/etc/apt/"))
         for afile in os.listdir("/etc/apt"):
-            self.assertTrue(os.path.exists(self.fs_root + "/etc/apt/" + afile))
+            if not os.path.isdir("/etc/apt/" + afile) or len(os.listdir("/etc/apt/"+afile)) > 0:
+                self.assertTrue(os.path.exists(self.fs_root + "/etc/apt/" + afile))
 
 
     def testRestoreRepos(self):
@@ -58,7 +59,7 @@ class AptBackendTest(unittest.TestCase):
         f.write("bar")
         f.close()
 
-        restore_target = snap.backends.repos.apt.Sapt()
+        restore_target = snap.backends.repos.sapt.Sapt()
         restore_target.fs_root = self.fs_root
         restore_target.restore(self.basedir)
 
@@ -76,7 +77,8 @@ class AptBackendTest(unittest.TestCase):
 
         # ensure all the system's packages have been recorded
         for pkg in apt.Cache():
-            self.assertIn(pkg.sourcePackageName, pkgs)
+            if pkg.is_installed:
+                self.assertIn(pkg.name, pkgs)
 
     # TODO this test works but takes a while to execute
     def testRestorePackages(self):
@@ -96,7 +98,7 @@ class AptBackendTest(unittest.TestCase):
         cache.open(None)
         for pkg in cache:
             if pkg.is_installed:
-                self.assertIn(pkg.sourcePackageName, record_package_name)
+                self.assertIn(pkg.name, record_package_names)
 
     def testBackupFiles(self):
         f=open(self.fs_root + "/foo" , 'w')

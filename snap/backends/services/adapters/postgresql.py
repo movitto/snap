@@ -30,7 +30,20 @@ from snap.backends.services.dispatcher import Dispatcher
 #  from a the snap services configuration directory
 import pwd
 
+import snap
+
 class Postgresql:
+
+    current_os = snap.osregistry.OS.lookup()
+    if current_os == 'fedora' or current_os == 'rhel' or current_os == 'centos':
+        DATADIR='/var/lib/pgsql/data'
+
+    elif current_os == 'debian' or current_os == 'ubuntu':
+        VERSION=os.listdir('/var/lib/postgresql')[0]
+        DATADIR='/var/lib/postgresql/'+VERSION+'/main'
+
+    DAEMON='postgresql'
+
 
     def db_exists(dbname):
         '''helper to return boolean indicating if the db w/ the specified name exists'''
@@ -106,11 +119,15 @@ class Postgresql:
         Postgresql.restore_user(current_euid, current_dir)
     drop_db=staticmethod(drop_db)
 
-    def init_db(data_dir='/var/lib/pgsql/data'):
+    def init_db(data_dir=DATADIR):
         '''helper to initialize the database server'''
 
         # db already initialized, just return
         if os.path.isdir(data_dir) and len(os.listdir(data_dir)) > 0:
+            return
+
+        # no need to do this on debian / ubuntu as its already taken care of
+        if os == 'debian' or os == 'ubuntu':
             return
 
         null=open('/dev/null', 'w')
@@ -122,10 +139,10 @@ class Postgresql:
 
     def backup(self, basedir):
         # check to see if service is running
-        already_running = Dispatcher.service_running('postgresql') 
+        already_running = Dispatcher.service_running(Postgresql.DAEMON)
 
         # start the postgresql server
-        Dispatcher.start_service('postgresql')
+        Dispatcher.start_service(Postgresql.DAEMON)
 
         # switch to the postgres user
         current_euid, current_dir = Postgresql.set_postgres_user()
@@ -141,7 +158,7 @@ class Postgresql:
 
         # if postgresql was running b4hand, start up again
         if not already_running:
-            Dispatcher.stop_service('postgresql')
+            Dispatcher.stop_service(Postgresql.DAEMON)
 
     def restore(self, basedir):
         null=open('/dev/null', 'w')
@@ -150,7 +167,7 @@ class Postgresql:
         Postgresql.init_db()
 
         # start the postgresql service
-        Dispatcher.start_service('postgresql')
+        Dispatcher.start_service(Postgresql.DAEMON)
 
         # switch to the postgres user
         current_euid, current_dir = Postgresql.set_postgres_user()

@@ -40,11 +40,12 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
     def __file_modified(self,file_name):
         '''return true if package has been modified since installation, else false'''
 
-        pkg = self.installed_packages[file_name] 
-
         # if the file isn't tracked by the package system
-        if pkg == None:
+        if not file_name in self.installed_file_packages:
             return True
+
+        pkg = self.installed_file_packages[file_name] 
+
 
         modified_time = os.stat(file_name).st_mtime
 

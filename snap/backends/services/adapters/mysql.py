@@ -21,9 +21,19 @@ import re
 import tempfile
 import subprocess
 
+import snap
 from snap.backends.services.dispatcher import Dispatcher
 
 class Mysql:
+
+    current_os = snap.osregistry.OS.lookup()
+    if current_os == 'fedora' or current_os == 'rhel' or current_os == 'centos':
+        DAEMON='mysqld'
+
+    elif current_os == 'debian' or current_os == 'ubuntu':
+        DAEMON='mysql'
+
+    DATADIR='/var/lib/mysql'
 
     def db_exists(dbname):
         '''helper to return boolean indicating if the db w/ the specified name exists'''
@@ -60,14 +70,34 @@ class Mysql:
         popen.wait()
     drop_db=staticmethod(drop_db)
 
+    def clear_root_pass():
+        '''helper to clear the mysql root password'''
+        # TODO at somepoint retrieve / return the root password to restore later
+
+        already_running = Dispatcher.service_running(Mysql.DAEMON)
+        if already_running:
+            Dispatcher.stop_service(Mysql.DAEMON)
+
+        server = subprocess.Popen(['mysqld_safe', '--skip-grant-tables'])
+        client = subprocess.Popen(['mysql', 'mysql', '-u', 'root', '-e', 'update user set password=PASSWORD("") where user="root"; flush privileges;'])
+        client.kill()
+        server.kill()
+
+        if already_running:
+            Dispatcher.start_service(Mysql.DAEMON)
+    clear_root_pass=staticmethod(clear_root_pass)
+
     def backup(self, basedir):
         null=open('/dev/null', 'w')
 
+        if Mysql.current_os == "ubuntu" or Mysql.current_os == "debian":
+            Mysql.clear_root_pass()
+
         # check to see if service is running
-        already_running = Dispatcher.service_running('mysqld') 
+        already_running = Dispatcher.service_running(Mysql.DAEMON) 
 
         # start the mysql server
-        Dispatcher.start_service('mysqld')
+        Dispatcher.start_service(Mysql.DAEMON)
 
         # use a pipe to invoke mysqldump and capture output
         outfile = file(basedir + "/dump.mysql", "w")
@@ -76,14 +106,16 @@ class Mysql:
 
         # if mysql was stopped b4hand, start up again
         if not already_running:
-            Dispatcher.stop_service('mysqld')
+            Dispatcher.stop_service(Mysql.DAEMON)
 
     def restore(self, basedir):
         null=open('/dev/null', 'w')
 
+        if Mysql.current_os == "ubuntu" or Mysql.current_os == "debian":
+            Mysql.clear_root_pass()
+
         # start the mysql server
-        popen = subprocess.Popen(["service", "mysqld", "start"], stdout=null, stderr=null)
-        popen.wait()
+        Dispatcher.start_service(Mysql.DAEMON)
 
         # use pipe to invoke mysql, restoring database
         infile = file(basedir + "/dump.mysql", "r")

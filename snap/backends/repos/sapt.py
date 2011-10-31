@@ -29,10 +29,10 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
         '''backup apt configuration and repositories'''
         # backup the apt config in /etc/apt
         for apt_conf in FileManager.get_all_files(include_dirs=['/etc/apt']):
-            SFile(yum_repo).copy_to(basedir)
+            SFile(apt_conf).copy_to(basedir)
           
     def restore(self, basedir):
         '''restore yum configuration and repositories'''
         # restore the apt config to /etc/apt
-        for apt_cont in FileManager.get_all_files(include_dirs=[basedir + "/etc/yum.repos.d"]):
-            SFile(apt_cont).copy_to(self.fs_root)
+        for apt_conf in FileManager.get_all_files(include_dirs=[basedir + "/etc/apt"]):
+            SFile(apt_conf).copy_to(self.fs_root)
