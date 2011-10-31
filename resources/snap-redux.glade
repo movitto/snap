@@ -536,7 +536,6 @@ It's that simple!</property>
           <object class="GtkImage" id="main_logo">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="pixbuf">/home/mmorsi/workspace/snap/resources/snap.png</property>
           </object>
           <packing>
             <property name="expand">True</property>

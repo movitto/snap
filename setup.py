@@ -29,5 +29,5 @@ setup(name = 'snap',
 	url = 'http://morsi.org/projects/snap',
 	packages = ['snap', "snap.metadata", "snap.backends"] + backends,
 	data_files = [("/etc", ["resources/snap.conf"]), 
-			('/usr/share/snap/', ['resources/snap.glade'])],
+			('/usr/share/snap/', ['resources/snap-redux.glade', 'resources/snap.png'])],
 	scripts = ["bin/snaptool", "bin/gsnap"] )

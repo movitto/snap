@@ -13,12 +13,18 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+import os
 import sys
 import time
 #import threading
 
-#GLADE_FILE="/usr/share/snap/snap-redux.glade"
-GLADE_FILE="/home/mmorsi/workspace/snap/resources/snap-redux.glade"
+GLADE_FILE="/usr/share/snap/snap-redux.glade"
+if not os.path.isfile(GLADE_FILE):
+    GLADE_FILE=os.path.dirname(os.path.realpath(__file__)) + "/../resources/snap-redux.glade" 
+
+LOGO_FILE='/usr/share/snap/snap.png'
+if not os.path.isfile(LOGO_FILE):
+    LOGO_FILE=os.path.dirname(os.path.realpath(__file__)) + "/../resources/snap.png"
 
 import snap
 import snap.callback
@@ -44,13 +50,16 @@ class ModeSelectionWindow:
        ModeSelectionWindow.set_instance(self)
 
        self.builder = Gtk.Builder() 
-       self.builder.add_objects_from_file(GLADE_FILE, ["mode_selection"])
+       self.builder.add_objects_from_file(GLADE_FILE, ["mode_selection", "main_logo"])
 
        self.window = self.builder.get_object("mode_selection") 
                                         
        # map the gui signals
        self.builder.connect_signals(self)
        self.window.connect("destroy", Gtk.main_quit)
+
+       # set the logo path
+       self.builder.get_object("main_logo").set_from_file(LOGO_FILE)
     
     def show(self):
         self.window.show()

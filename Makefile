@@ -30,9 +30,9 @@ package:
 
 rpm: package
 	cp build/snap-$(VERSION).tgz ~/rpmbuild/SOURCES
-	rpmbuild -ba contrib/fedora/snap.spec
+	rpmbuild -ba snap.spec
 
-deb:
+deb: clean
 	debuild -us -uc
 
 distclean: clean
