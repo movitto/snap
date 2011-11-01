@@ -15,8 +15,21 @@
 
 class Mock:
 
+    mock_is_available = True
+
+    is_available_called  = False
+    install_prereqs_called = False
     backup_called  = False
     restore_called = False
+
+    def is_available(self):
+        """simply flag that this has been called"""
+        Mock.is_available_called = True
+        return Mock.mock_is_available
+
+    def install_prereqs(self):
+        """simply flag that this has been called"""
+        Mock.install_prereqs_called = True
 
     def backup(self, basedir):
         """simply flag that backup has been called"""

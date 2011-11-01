@@ -19,14 +19,13 @@ import unittest
 
 import snap
 from snap.exceptions import InsufficientPermissionError
-from snap.osregistry import OS
 
 class SnapBaseTest(unittest.TestCase):
     def setUp(self):
         self.snapbase = snap.SnapBase()
 
-        self.orig_os_lookup = OS.lookup
-        OS.lookup = types.MethodType(SnapBaseTest.new_os_lookup, OS)
+        self.orig_os = snap.osregistry.OS.current_os
+        snap.osregistry.OS.current_os = 'mock'
 
         self.orig_target_backends = snap.config.options.target_backends
         snap.config.options.target_backends = {'repos'    : True,
@@ -38,7 +37,7 @@ class SnapBaseTest(unittest.TestCase):
         snap.config.options.snapfile += "-snap-test.tgz"
 
     def tearDown(self):
-        OS.lookup = self.orig_os_lookup
+        snap.osregistry.OS.current_os = self.orig_os
         snap.config.target_backends  = self.orig_target_backends
         snap.config.options.snapfile = self.orig_snapfile
 
@@ -55,10 +54,6 @@ class SnapBaseTest(unittest.TestCase):
 
         if restoreeuid:
             os.seteuid(0) 
-
-    def new_os_lookup(self):
-        return 'mock'
-    new_os_lookup=staticmethod(new_os_lookup)
 
     def testLoadBackends(self):
         backends = self.snapbase.load_backends()

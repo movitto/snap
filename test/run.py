@@ -43,11 +43,10 @@ if __name__ == '__main__':
     suite.addTest(unittest.makeSuite(servicedispatchertest.ServiceDispatcherTest))
     suite.addTest(unittest.makeSuite(snaptest.SnapBaseTest))
     
-    os = snap.osregistry.OS.lookup()
-    if os == 'fedora' or os == 'rhel' or os == 'centos':
+    if snap.osregistry.OS.yum_based():
         import yumbackendtest
         suite.addTest(unittest.makeSuite(yumbackendtest.YumBackendTest))
-    elif os == 'ubuntu' or os == 'debian':
+    elif snap.osregistry.OS.apt_based():
         import aptbackendtest
         suite.addTest(unittest.makeSuite(aptbackendtest.AptBackendTest))
 

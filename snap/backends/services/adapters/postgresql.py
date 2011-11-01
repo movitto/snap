@@ -34,11 +34,10 @@ import snap
 
 class Postgresql:
 
-    current_os = snap.osregistry.OS.lookup()
-    if current_os == 'fedora' or current_os == 'rhel' or current_os == 'centos':
+    if snap.osregistry.OS.yum_based():
         DATADIR='/var/lib/pgsql/data'
 
-    elif current_os == 'debian' or current_os == 'ubuntu':
+    elif snap.osregistry.OS.apt_based():
         VERSION=os.listdir('/var/lib/postgresql')[0]
         DATADIR='/var/lib/postgresql/'+VERSION+'/main'
 
@@ -127,7 +126,7 @@ class Postgresql:
             return
 
         # no need to do this on debian / ubuntu as its already taken care of
-        if os == 'debian' or os == 'ubuntu':
+        if snap.osregistry.OS.apt_based():
             return
 
         # if the datadir already exists, just return
@@ -140,6 +139,14 @@ class Postgresql:
         popen = subprocess.Popen(["service", "postgresql", "initdb"], stdout=null)
         popen.wait()
     init_db=staticmethod(init_db)
+
+    def is_available(self):
+        '''return true if we're on a linux system and the init script is available'''
+        return snap.osregistry.OS.is_linux() and os.path.isfile("/etc/init.d/" + Postgresql.DAEMON)
+
+    def install_prereqs(self):
+        # FIXME implement
+        pass
 
     def backup(self, basedir):
         # check to see if service is running

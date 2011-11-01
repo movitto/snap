@@ -26,11 +26,10 @@ from snap.backends.services.dispatcher import Dispatcher
 
 class Mysql:
 
-    current_os = snap.osregistry.OS.lookup()
-    if current_os == 'fedora' or current_os == 'rhel' or current_os == 'centos':
+    if snap.osregistry.OS.yum_based():
         DAEMON='mysqld'
 
-    elif current_os == 'debian' or current_os == 'ubuntu':
+    elif snap.osregistru.OS.apt_based():
         DAEMON='mysql'
 
     DATADIR='/var/lib/mysql'
@@ -39,7 +38,7 @@ class Mysql:
         '''helper to return boolean indicating if the db w/ the specified name exists'''
         null=open('/dev/null', 'w')
 
-        # retrieve list of db names from postgres
+        # retrieve list of db names from mysql
         t = tempfile.TemporaryFile()
         popen = subprocess.Popen(["mysql", "-e", "show databases"], stdout=t, stderr=null)
         popen.wait()
@@ -87,10 +86,22 @@ class Mysql:
             Dispatcher.start_service(Mysql.DAEMON)
     clear_root_pass=staticmethod(clear_root_pass)
 
+    def is_available(self):
+        '''return true if we're on a linux system and the init script is available'''
+        return snap.osregistry.OS.is_linux() and os.path.isfile("/etc/init.d/" + Mysql.DAEMON)
+
+    def is_available(self):
+        '''return true if we're on a linux system and the init script is available'''
+        return snap.osregistry.OS.is_linux() and os.path.isfile("/etc/init.d/" + Mysql.DAEMON)
+
+    def install_prereqs(self):
+        # FIXME implement
+        pass
+
     def backup(self, basedir):
         null=open('/dev/null', 'w')
 
-        if Mysql.current_os == "ubuntu" or Mysql.current_os == "debian":
+        if snap.osregistry.OS.apt_based():
             Mysql.clear_root_pass()
 
         # check to see if service is running
@@ -111,7 +122,7 @@ class Mysql:
     def restore(self, basedir):
         null=open('/dev/null', 'w')
 
-        if Mysql.current_os == "ubuntu" or Mysql.current_os == "debian":
+        if snap.osregistry.OS.apt_based():
             Mysql.clear_root_pass()
 
         # start the mysql server

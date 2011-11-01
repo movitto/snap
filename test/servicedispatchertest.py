@@ -25,6 +25,7 @@ import snap
 from snap.metadata.service import ServicesRecordFile
 from snap.backends.services.dispatcher import Dispatcher
 
+import snap.backends.services.adapters.mock
 import snap.backends.services.adapters.iptables
 import snap.backends.services.adapters.postgresql
 import snap.backends.services.adapters.mysql
@@ -67,9 +68,14 @@ class ServiceDispatcherTest(unittest.TestCase):
         self.assertIn(snap.backends.services.adapters.mock.Mock,             service_classes)
 
     def testDispatcherBackup(self):
+        snap.backends.services.adapters.mock.Mock.mock_is_available   = True
+        snap.backends.services.adapters.mock.Mock.is_available_called = False
+        snap.backends.services.adapters.mock.Mock.backup_called       = False
+
         dispatcher = snap.backends.services.dispatcher.Dispatcher()
         dispatcher.backup(self.basedir, include=['mock'])
 
+        self.assertTrue(snap.backends.services.adapters.mock.Mock.is_available_called)
         self.assertTrue(snap.backends.services.adapters.mock.Mock.backup_called)
         self.assertTrue(os.path.isfile(self.basedir + "/services.xml"))
 
@@ -80,13 +86,47 @@ class ServiceDispatcherTest(unittest.TestCase):
             service_names.append(service.name)
         self.assertIn("mock", service_names)
 
+    def testNoBackupIfNotAvailable(self):
+        snap.backends.services.adapters.mock.Mock.mock_is_available   = False
+        snap.backends.services.adapters.mock.Mock.is_available_called = False
+        snap.backends.services.adapters.mock.Mock.backup_called       = False
+
+        dispatcher = snap.backends.services.dispatcher.Dispatcher()
+        dispatcher.backup(self.basedir, include=['mock'])
+
+        self.assertTrue(snap.backends.services.adapters.mock.Mock.is_available_called)
+        self.assertFalse(snap.backends.services.adapters.mock.Mock.backup_called)
+
     def testDispatcherRestore(self):
+        # first backup the mock service
+        dispatcher = snap.backends.services.dispatcher.Dispatcher()
+        dispatcher.backup(self.basedir, include=['mock'])
+
+        snap.backends.services.adapters.mock.Mock.mock_is_available   = False
+        snap.backends.services.adapters.mock.Mock.is_available_called = False
+        snap.backends.services.adapters.mock.Mock.install_prereqs_called = False
+        snap.backends.services.adapters.mock.Mock.restore_called      = False
+
+        # then restore it
+        dispatcher.restore(self.basedir)
+        self.assertTrue(snap.backends.services.adapters.mock.Mock.is_available_called)
+        self.assertTrue(snap.backends.services.adapters.mock.Mock.install_prereqs_called)
+        self.assertTrue(snap.backends.services.adapters.mock.Mock.restore_called)
+
+    def testNoInstallPrereqsIfAvailable(self):
+        snap.backends.services.adapters.mock.Mock.mock_is_available   = True
+        snap.backends.services.adapters.mock.Mock.is_available_called = False
+        snap.backends.services.adapters.mock.Mock.install_prereqs_called = False
+        snap.backends.services.adapters.mock.Mock.restore_called      = False
+
         # first backup the mock service
         dispatcher = snap.backends.services.dispatcher.Dispatcher()
         dispatcher.backup(self.basedir, include=['mock'])
 
         # then restore it
         dispatcher.restore(self.basedir)
+        self.assertTrue(snap.backends.services.adapters.mock.Mock.is_available_called)
+        self.assertFalse(snap.backends.services.adapters.mock.Mock.install_prereqs_called)
         self.assertTrue(snap.backends.services.adapters.mock.Mock.restore_called)
 
     def testSetAndRestorePythonUser(self):
@@ -183,7 +223,7 @@ class ServiceDispatcherTest(unittest.TestCase):
                     snap.backends.services.adapters.postgresql.Postgresql.DATADIR)
         # XXX dirty hack make sure the datadir is owned by postgres
         data_dir=snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../"
-        if os == "ubuntu" or os == "debian":
+        if snap.osregistry.OS.apt_based():
             data_dir += "../"
         pg_user = pwd.getpwnam('postgres')
         for root, dirs, files in os.walk(data_dir):

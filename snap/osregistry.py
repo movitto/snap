@@ -18,38 +18,62 @@ import re
 from snap.filemanager import FileManager
 from snap.options     import *
 
+def lookup():
+  '''lookup and return the current operating system we are running as'''
+
+  # TODO other operating system checks
+  if FileManager.exists('/etc/fedora-release'):
+    return 'fedora'
+
+  elif FileManager.exists('/etc/redhat-release'):
+    return 'rhel'
+
+  elif FileManager.exists('/etc/centos-release'):
+    return 'centos'
+
+  elif FileManager.exists("/proc/version"):
+      f = file("/proc/version", "r")
+      c = f.read()
+      f.close()
+      if len(re.findall('Ubuntu', c)) > 0:
+          return 'ubuntu'
+      elif len(re.findall('Debian', c)) > 0:
+          return 'debian'
+
+  elif FileManager.exists('C:\\'):
+    return 'windows'
+
+  return None
+
 class OS:
   '''helper methods to perform OS level operations'''
 
-  def lookup():
-    '''lookup and return the current operating system we are running as'''
+  current_os = lookup()
 
-    # TODO other operating system checks
-    if FileManager.exists('/etc/fedora-release'):
-      return 'fedora'
+  def is_linux(operating_system=None):
+      '''return true if we're running a linux system'''
+      if operating_system == None:
+          operating_system = OS.current_os
+      return operating_system in ['fedora', 'rhel', 'centos', 'ubuntu', 'debian']
+  is_linux=staticmethod(is_linux)
 
-    elif FileManager.exists('/etc/redhat-release'):
-      return 'rhel'
+  def apt_based(operating_system=None):
+      '''return true if we're running an apt based system'''
+      if operating_system == None:
+          operating_system = OS.current_os
+      return operating_system in ['ubuntu', 'debian']
+  apt_based=staticmethod(apt_based)
 
-    elif FileManager.exists('/etc/centos-release'):
-      return 'centos'
+  def yum_based(operating_system=None):
+      '''return true if we're running an yum based system'''
+      if operating_system == None:
+          operating_system = OS.current_os
+      return operating_system in ['fedora', 'rhel', 'centos']
+  yum_based=staticmethod(yum_based)
 
-    elif FileManager.exists("/proc/version"):
-        f = file("/proc/version", "r")
-        c = f.read()
-        f.close()
-        if len(re.findall('Ubuntu', c)) > 0:
-            return 'ubuntu'
-        elif len(re.findall('Debian', c)) > 0:
-            return 'debian'
-
-    elif FileManager.exists('C:\\'):
-      return 'windows'
-
-    return None
-  lookup=staticmethod(lookup)
-
-  def default_backend_for_target(os, target):
-    '''return the default backend configured for the given os / snapshot target'''
-    return DEFAULT_BACKENDS[os][target]
+  def default_backend_for_target(target, operating_system=None):
+      '''return the default backend configured for the given os / snapshot target'''
+      if operating_system == None:
+          operating_system = OS.current_os
+      return DEFAULT_BACKENDS[operating_system][target]
   default_backend_for_target = staticmethod(default_backend_for_target)

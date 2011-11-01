@@ -18,7 +18,17 @@
 
 import subprocess
 
+import snap
+
 class Iptables:
+
+    def is_available(self):
+        # if we're on a linux system, return true, else false
+        return snap.osregistry.OS.is_linux()
+
+    def install_prereqs(self):
+        # don't need to do anything here
+        pass
 
     def backup(self, basedir):
         # use a pipe to invoke iptables-save and capture output

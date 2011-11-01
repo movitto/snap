@@ -78,8 +78,10 @@ class Dispatcher(snap.snapshottarget.SnapshotTarget):
             if snap.config.options.log_level_at_least('verbose'):
                 snap.callback.snapcallback.message("Backing up service " + service);
             service_instance = self.load_service(service)
-            sservice = service_instance.backup(basedir)
-            services.append(Service(name=service))
+            # check if service is running / available on machine b4 backing up
+            if service_instance.is_available():
+                sservice = service_instance.backup(basedir)
+                services.append(Service(name=service))
 
         record = ServicesRecordFile(basedir + "/services.xml")
         record.write(services)
@@ -94,5 +96,8 @@ class Dispatcher(snap.snapshottarget.SnapshotTarget):
             if snap.config.options.log_level_at_least('verbose'):
                 snap.callback.snapcallback.message("Restoring service " + sservice.name);
             service_instance = self.load_service(sservice.name)
+            # install the prerequisites if the services is not available
+            if not service_instance.is_available():
+                service_instance.install_prereqs()
             service_instance.restore(basedir)
         
