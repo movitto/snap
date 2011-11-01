@@ -17,6 +17,7 @@ import os
 import shutil
 import unittest
 
+from snap.filemanager    import FileManager
 from snap.metadata.sfile import SFile, FilesRecordFile
 
 class SFileMetadataTest(unittest.TestCase):
@@ -27,9 +28,7 @@ class SFileMetadataTest(unittest.TestCase):
 
         files_record_file = FilesRecordFile(file_path)
         files_record_file.write(files)
-        f=open(file_path, 'r')
-        contents = f.read()
-        f.close()
+        contents = FileManager.read_file(file_path)
 
         self.assertEqual("<files><file>/some/path</file><file>/another/path</file></files>", contents)
         os.remove(file_path)
@@ -59,9 +58,7 @@ class SFileMetadataTest(unittest.TestCase):
         sfile.copy_to(dest_dir)
         self.assertTrue(os.path.exists(dest_file))
 
-        f=open(dest_file, 'r')
-        contents = f.read()
-        f.close()
+        contents = FileManager.read_file(dest_file)
 
         self.assertEqual("foo", contents)
 

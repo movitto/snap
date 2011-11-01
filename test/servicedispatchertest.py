@@ -22,6 +22,7 @@ import unittest
 import subprocess
 
 import snap
+from snap.filemanager import FileManager
 from snap.metadata.service import ServicesRecordFile
 from snap.backends.services.dispatcher import Dispatcher
 
@@ -192,9 +193,7 @@ class ServiceDispatcherTest(unittest.TestCase):
 
         # assert the db dump exists and has the db dump
         self.assertTrue(os.path.isfile(pdir + "/dump.psql"))
-        f=file(pdir + "/dump.psql", 'r')
-        c=f.read()
-        f.close()
+        c=FileManager.read_file(pdir + "/dump.psql")
         self.assertEqual(1, len(re.findall('CREATE DATABASE snaptest', c)))
 
         # finally cleanup
@@ -282,9 +281,7 @@ class ServiceDispatcherTest(unittest.TestCase):
 
         # assert the db dump exists and has the db dump
         self.assertTrue(os.path.isfile(mdir + "/dump.mysql"))
-        f=file(mdir + "/dump.mysql", 'r')
-        c=f.read()
-        f.close()
+        c = FileManager.read_file(mdir + "/dump.mysql")
         self.assertEqual(1, len(re.findall('CREATE DATABASE.*snaptest', c)))
 
         # finally cleanup
@@ -350,9 +347,7 @@ class ServiceDispatcherTest(unittest.TestCase):
 
         # assert we have our rule
         self.assertTrue(os.path.isfile(self.basedir + "/iptables.rules"))
-        f = open(self.basedir + "/iptables.rules", 'r')
-        c = f.read()
-        f.close
+        c = FileManager.read_file(self.basedir + "/iptables.rules")
         self.assertEqual(1, len(re.findall('-A INPUT -p tcp -m tcp --dport 22 -j ACCEP', c)))
 
         # again flush the filter table
@@ -368,10 +363,7 @@ class ServiceDispatcherTest(unittest.TestCase):
         popen = subprocess.Popen(["iptables", "-nvL"], stdout=f)
         popen.wait()
         self.assertEqual(0, popen.returncode)
-        f=file(self.basedir + "/iptables-running", 'r')
-        c = f.read()
-        c = re.sub("\s+", " ", c)
-        f.close()
+        c = re.sub("\s+", " ", FileManager.read_file(self.basedir + "/iptables-running"))
         self.assertEqual(1, 
           len(re.findall("ACCEPT.*tcp dpt:22", c))) # TODO prolly could be a better regex
           

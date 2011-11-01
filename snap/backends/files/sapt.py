@@ -59,9 +59,7 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
         # finally if the file is a deb conffile, we just assume its modified since
         # there is no way to determine if the file was modified before the package
         # was updated (see the link above)
-        f = open('/var/lib/dpkg/info/' + pkg.sourcePackageName + '.conffiles')
-        c = f.read()
-        f.close()
+        c = FileManager.read_file('/var/lib/dpkg/info/' + pkg.sourcePackageName + '.conffiles')
         if len(re.findall(file_name, c)) > 0:
             return True
 

@@ -17,6 +17,7 @@ import os
 import unittest
 
 from snap.crypto import Crypto
+from snap.filemanager import FileManager
 
 class CryptoTest(unittest.TestCase):
     # TODO
@@ -33,9 +34,7 @@ class CryptoTest(unittest.TestCase):
         Crypto.encrypt_file(key, temp_file_path)
         self.assertTrue(os.path.exists(temp_file_path + ".enc"))
 
-        f = open(temp_file_path + ".enc")
-        contents = f.read()
-        f.close()
+        contents = FileManager.read_file(temp_file_path + ".enc")
 
         # TODO should do a better verification that it's actually encrypted properly
         self.assertTrue(contents != "foobar")
@@ -43,9 +42,7 @@ class CryptoTest(unittest.TestCase):
         os.remove(temp_file_path)
         Crypto.decrypt_file(key, temp_file_path + ".enc")
 
-        f = open(temp_file_path)
-        contents = f.read()
-        f.close()
+        contents = FileManager.read_file(temp_file_path)
 
         self.assertTrue(contents == "foobar")
 

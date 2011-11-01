@@ -67,6 +67,18 @@ class FileManagerTest(unittest.TestCase):
         FileManager.rm_dir(temp_dir_path)
         self.assertFalse(os.path.exists(temp_dir_path))
 
+    def testReadFile(self):
+        temp_file_path = os.path.join(os.path.dirname(__file__), "data/read-file")
+
+        f = open(temp_file_path, 'w')
+        f.write('foobar')
+        f.close()
+
+        c = FileManager.read_file(temp_file_path)
+        FileManager.rm(temp_file_path)
+        self.assertEqual("foobar", c)
+
+
     def testGetAllFiles(self):
         data_path = os.path.join(os.path.dirname(__file__), "data/tmp")
         files = FileManager.get_all_files(include_dirs=[data_path])

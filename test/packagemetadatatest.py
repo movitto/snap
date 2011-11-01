@@ -16,6 +16,7 @@
 import os
 import unittest
 
+from snap.filemanager import FileManager
 from snap.metadata.package import Package, PackagesRecordFile
 
 class PackageMetadataTest(unittest.TestCase):
@@ -27,9 +28,7 @@ class PackageMetadataTest(unittest.TestCase):
 
         package_record_file = PackagesRecordFile(file_path)
         package_record_file.write(packages)
-        f=open(file_path, 'r')
-        contents = f.read()
-        f.close()
+        contents = FileManager.read_file(file_path)
 
         self.assertEqual("<packages><package>foo</package><package>baz</package><package>bar</package></packages>", contents)
         os.remove(file_path)

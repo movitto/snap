@@ -24,6 +24,7 @@ import snap.backends.files.syum
 import snap.backends.repos.syum
 import snap.backends.packages.syum
 
+from snap.filemanager      import FileManager
 from snap.metadata.sfile   import FilesRecordFile
 from snap.metadata.package import PackagesRecordFile
 

@@ -81,6 +81,21 @@ class FileManager:
         return os.path.exists(path)
     exists = staticmethod(exists)
 
+    def read_file(path):
+        '''return and return the entire contents of the specified file
+
+        @param path - path to th file to check
+        @return - contents of the file exists'''
+
+        try:
+            f = open(path, 'r')
+            c = f.read()
+            f.close()
+            return c
+        except:
+            raise snap.exceptions.FilesystemError("Could not read file " + path)
+    read_file = staticmethod(read_file)
+
     def get_all_files(include_dirs=['/'], exclude_dirs=[]):
         '''return a list of paths corresponding to files in one or more directories - static method
 

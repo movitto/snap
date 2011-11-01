@@ -32,9 +32,7 @@ def lookup():
     return 'centos'
 
   elif FileManager.exists("/proc/version"):
-      f = file("/proc/version", "r")
-      c = f.read()
-      f.close()
+      c = FileManager.read_file("/proc/version")
       if len(re.findall('Ubuntu', c)) > 0:
           return 'ubuntu'
       elif len(re.findall('Debian', c)) > 0:

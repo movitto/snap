@@ -16,6 +16,7 @@
 import os
 import unittest
 
+from snap.filemanager import FileManager
 from snap.metadata.service import Service, ServicesRecordFile
 
 class ServicesMetadataTest(unittest.TestCase):
@@ -26,9 +27,7 @@ class ServicesMetadataTest(unittest.TestCase):
 
         service_record_file = ServicesRecordFile(file_path)
         service_record_file.write(services)
-        f=open(file_path, 'r')
-        contents = f.read()
-        f.close()
+        contents = FileManager.read_file(file_path)
 
         self.assertEqual("<services><service>foo</service><service>baz</service></services>", contents)
         os.remove(file_path)
