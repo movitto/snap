@@ -37,9 +37,15 @@ class Postgresql:
     if snap.osregistry.OS.yum_based():
         DATADIR='/var/lib/pgsql/data'
 
+        # hack until we re-introduce package system abstraction:
+        PREREQ_INSTALL_COMMAND='yum install postgresql-server postgresql'
+
     elif snap.osregistry.OS.apt_based():
         VERSION=os.listdir('/var/lib/postgresql')[0]
         DATADIR='/var/lib/postgresql/'+VERSION+'/main'
+
+        # hack until we re-introduce package system abstraction:
+        PREREQ_INSTALL_COMMAND='apt-get install postgresql'
 
     DAEMON='postgresql'
 
@@ -145,8 +151,8 @@ class Postgresql:
         return snap.osregistry.OS.is_linux() and os.path.isfile("/etc/init.d/" + Postgresql.DAEMON)
 
     def install_prereqs(self):
-        # FIXME implement
-        pass
+        popen = subprocess.Popen(PREREQ_INSTALL_COMMAND.split())
+        popen.wait()
 
     def backup(self, basedir):
         # check to see if service is running
