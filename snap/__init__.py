@@ -79,11 +79,13 @@ class SnapBase:
         FileManager.make_dir(construct_dir)
 
         backends = self.load_backends()
+        configured_targets = backends.keys()
         for target in SnapshotTarget.BACKENDS: # load from SnapshotTarget to preserve order
-          backend = backends[target]
-          includes = snap.config.options.target_includes[target]
-          excludes = snap.config.options.target_excludes[target]
-          backend.backup(construct_dir,include=includes,exclude=excludes)
+          if target in configured_targets:
+            backend = backends[target]
+            includes = snap.config.options.target_includes[target]
+            excludes = snap.config.options.target_excludes[target]
+            backend.backup(construct_dir,include=includes,exclude=excludes)
 
         SnapFile(snapfile=snap.config.options.snapfile, 
                  snapdirectory=construct_dir,
@@ -111,9 +113,11 @@ class SnapBase:
                  encryption_password=snap.config.options.encryption_password).extract()
 
         backends = self.load_backends()
+        configured_targets = backends.keys()
         for target in SnapshotTarget.BACKENDS: # load from SnapShotTarget to preserve order
-          backend = backends[target]
-          backend.restore(construct_dir)
+          if target in configured_targets:
+            backend = backends[target]
+            backend.restore(construct_dir)
 
         if snap.config.options.log_level_at_least('normal'):
             snap.callback.snapcallback.message("Restore completed")

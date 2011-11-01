@@ -45,10 +45,10 @@ class SnapFile:
         else:
             self.encryption_key = None
 
-    def __prepare_file_for_tarball(tarball, fullpath):
+    def __prepare_file_for_tarball(tarball, fullpath, partialpath):
         '''set attributes of a file for inclusion in a tarball'''
         fs = os.stat(fullpath)
-        tarinfo = tarball.gettarinfo(fullpath)
+        tarinfo = tarball.gettarinfo(partialpath)
         tarinfo.uid = fs.st_uid
         tarinfo.gid = fs.st_gid
         tarinfo.mtime = fs.st_mtime
@@ -70,11 +70,13 @@ class SnapFile:
 
         # copy directories into snapfile
         for sdir in FileManager.get_all_subdirectories(os.getcwd(), recursive=True):
-            tarball.addfile(self.__prepare_file_for_tarball(tarball, sdir))
+            partialpath = sdir.replace(self.snapdirectory + "/", "")
+            tarball.addfile(self.__prepare_file_for_tarball(tarball, sdir, partialpath))
 
         # copy files into snapfile
         for tfile in FileManager.get_all_files(include_dirs=[os.getcwd()]):
-            tarball.addfile(self.__prepare_file_for_tarball(tarball, tfile), file(tfile))
+            partialpath = tfile.replace(self.snapdirectory + "/", "")
+            tarball.addfile(self.__prepare_file_for_tarball(tarball, tfile, partialpath), file(tfile))
 
         # finish up tarball creation
         tarball.close()

@@ -188,9 +188,10 @@ class Config:
         self.parser.add_option('-l', '--log-level', dest = 'log_level', action='store', default="normal", help='Log level (quiet, normal, verbose, debug)')
         self.parser.add_option('-f', '--snapfile', dest = 'snapfile', action='store', default=None, help='Snapshot file')
         self.parser.add_option('-p', '--password',  dest = 'encryption_password',  action='store', default=None, help='Snapshot File Encryption/Decryption Password')
+        # FIXME how to permit parameter lists for some of these
         for backend in SnapshotTarget.BACKENDS:
-            self.parser.add_option('', '--'   + backend, dest = backend, action='store', help='Enable '  + backend + ' snapshots/restoration')
-            self.parser.add_option('', '--no-' + backend, dest = backend, action='store_false', help='Disable ' + backend + ' snapshots/restoration')
+            self.parser.add_option('', '--'   + backend, dest = backend, action='store_true', help='Enable '  + backend + ' snapshots/restoration')
+            self.parser.add_option('', '--no' + backend, dest = backend, action='store_false', help='Disable ' + backend + ' snapshots/restoration')
 
         (options, args) = self.parser.parse_args()
         if options.restore != False:

@@ -74,6 +74,14 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
         if len(include) == 0:
             include = ['/']
 
+        for additional_exclude in ['/proc', '/sys', '/selinux']:
+            if not additional_exclude in exclude:
+                exclude.append(additional_exclude)
+
+        # remove duplicates
+        include = list(set(include))
+        exclude = list(set(exclude))
+
         # determine which files have been modified since installation
         #   and copy those to basedir
         sfiles = []

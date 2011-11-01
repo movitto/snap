@@ -48,10 +48,11 @@ class SFile(object):
             ofs = os.stat(path_prefix + self.directory)
             os.chown(basedir + self.directory, ofs.st_uid, ofs.st_gid)
 
-        shutil.copyfile(path_prefix + self.path, basedir + self.path)
-        shutil.copystat(path_prefix + self.path, basedir + self.path)
-        ofs = os.stat(path_prefix + self.path)
-        os.chown(basedir + self.path, ofs.st_uid, ofs.st_gid)
+        if os.path.isfile(path_prefix + self.path):
+            shutil.copyfile(path_prefix + self.path, basedir + self.path)
+            shutil.copystat(path_prefix + self.path, basedir + self.path)
+            ofs = os.stat(path_prefix + self.path)
+            os.chown(basedir + self.path, ofs.st_uid, ofs.st_gid)
 
 class FilesRecordFile:
     '''a snap files record file, contains list of files modified, to restore'''
