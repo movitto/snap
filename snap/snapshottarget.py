@@ -17,7 +17,7 @@
 class SnapshotTarget:
     """Abstract entity on which to perform and restore a snapshot"""
 
-    # actual target backends snap implements
+    # actual target backends snap implements (in the order which they are to execute)
     BACKENDS = ['repos', 'packages', 'files', 'services']
 
     def backup(self, basedir):

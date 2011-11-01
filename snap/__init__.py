@@ -20,6 +20,7 @@ import snap
 from snap.osregistry        import OS
 from snap.exceptions        import InsufficientPermissionError
 from snap.filemanager       import FileManager
+from snap.snapshottarget    import SnapshotTarget
 from snap.metadata.snapfile import SnapFile
 
 class SnapBase:
@@ -79,7 +80,7 @@ class SnapBase:
         os.chmod(construct_dir, 0777)
 
         backends = self.load_backends()
-        for target in backends.keys():
+        for target in SnapshotTarget.BACKENDS: # load from SnapshotTarget to preserve order
           backend = backends[target]
           includes = snap.config.options.target_includes[target]
           excludes = snap.config.options.target_excludes[target]
@@ -112,7 +113,7 @@ class SnapBase:
                  encryption_password=snap.config.options.encryption_password).extract()
 
         backends = self.load_backends()
-        for target in backends.keys():
+        for target in SnapshotTarget.BACKENDS: # load from SnapShotTarget to preserve order
           backend = backends[target]
           backend.restore(construct_dir)
 
