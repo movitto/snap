@@ -26,14 +26,15 @@ clean:
 	rm -fv snap/backends/*/*.pyc
 
 package:
-	tar czvf build/snap-${VERSION}.tgz . --exclude=.git --transform='s,./,snap-$(VERSION)/,'
+	test -d build || mkdir build
+	tar czvf build/snap-${VERSION}.tgz . --exclude=.git --exclude=build --transform='s,./,snap-$(VERSION)/,'
 
 rpm: package
 	cp build/snap-$(VERSION).tgz ~/rpmbuild/SOURCES
 	rpmbuild -ba snap.spec
 
 deb: clean
-	debuild -us -uc
+	debuild -us -uc -i -b
 
 distclean: clean
 

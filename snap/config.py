@@ -189,8 +189,8 @@ class Config:
         self.parser.add_option('-f', '--snapfile', dest = 'snapfile', action='store', default=None, help='Snapshot file')
         self.parser.add_option('-p', '--password',  dest = 'encryption_password',  action='store', default=None, help='Snapshot File Encryption/Decryption Password')
         for backend in SnapshotTarget.BACKENDS:
-            self.parser.add_option('', '--'   + backend, dest = backend, action='store', default=None, help='Enable '  + backend + ' snapshots/restoration')
-            self.parser.add_option('', '--no' + backend, dest = backend, action='store_false', default=False, help='Disable ' + backend + ' snapshots/restoration')
+            self.parser.add_option('', '--'   + backend, dest = backend, action='store', help='Enable '  + backend + ' snapshots/restoration')
+            self.parser.add_option('', '--no-' + backend, dest = backend, action='store_false', help='Disable ' + backend + ' snapshots/restoration')
 
         (options, args) = self.parser.parse_args()
         if options.restore != False:

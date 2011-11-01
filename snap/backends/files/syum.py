@@ -56,12 +56,20 @@ class Syum(snap.snapshottarget.SnapshotTarget):
         if len(include) == 0:
             include = ['/']
 
-        # determine which files have been modified since installation
+        for additional_exclude in ['/proc', '/sys', '/selinux']:
+            if not additional_exclude in exclude:
+                exclude.append(additional_exclude)
+
+        # remove duplicates
+        include = list(set(include))
+        exclude = list(set(exclude))
+
+        # determine which readable files have been modified since installation
         #   and copy those to basedir
         sfiles = []
         files = FileManager.get_all_files(include, exclude)
         for tfile in files:
-            if self.__file_modified(tfile):
+            if self.__file_modified(tfile) and os.access(tfile, os.R_OK):
                 if snap.config.options.log_level_at_least('verbose'):
                     snap.callback.snapcallback.message("Backing up file " + tfile);
                 sfile = SFile(tfile)

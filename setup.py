@@ -17,9 +17,10 @@ import os
 from distutils.core import setup
 
 backends=[]
-for f in os.listdir("snap/backends"):
-  if os.path.isdir("snap/backends/" + f):
-    backends.append("snap.backends." + f)
+for root,dirs,files in os.walk("snap/backends"):
+  module = root.replace('/', '.')
+  for d in dirs:
+    backends.append(module + "." + d)
 
 setup(name = 'snap',
 	version='0.5',

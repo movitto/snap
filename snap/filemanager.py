@@ -66,7 +66,7 @@ class FileManager:
 
         try:
             if os.path.isdir(target):
-                os.removedirs(target)
+                shutil.rmtree(target)
         except:
             raise snap.exceptions.FilesystemError("Could not remove directory " + target)
     rm_dir = staticmethod(rm_dir)

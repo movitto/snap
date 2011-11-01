@@ -81,6 +81,8 @@ class SnapFile:
 
         # encrypt the snapshot if we've set a key
         if self.encryption_key != None:
+            if snap.config.options.log_level_at_least('verbose'):
+                snap.callback.snapcallback.message("Encyrpting snapfile")
             Crypto.encrypt_file(self.encryption_key, self.snapfile, self.snapfile + ".enc")
             FileManager.mv(self.snapfile + ".enc", self.snapfile)
 
@@ -98,6 +100,8 @@ class SnapFile:
 
         # decrypt the file if we've set a key
         if self.encryption_key != None:
+            if snap.config.options.log_level_at_least('verbose'):
+                snap.callback.snapcallback.message("Decyrpting snapfile")
             Crypto.decrypt_file(self.encryption_key, self.snapfile, self.snapfile + ".dec")
             FileManager.mv(self.snapfile + ".dec", self.snapfile)
 
