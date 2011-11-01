@@ -77,19 +77,21 @@ class Syum(snap.snapshottarget.SnapshotTarget):
 
         # find the ones available to install
         for pkg in packages:
-            if snap.config.options.log_level_at_least('verbose'):
-                snap.callback.snapcallback.message("Restoring package " + pkg.name);
-            exactmatch, matched, unmatched = yum.packages.parsePackages(pl.available, [pkg.name])
+            # ignore packages already installed (these are already marked to be updated)
+            if not self.yum.rpmdb.installed(pkg.name):
+                exactmatch, matched, unmatched = yum.packages.parsePackages(pl.available, [pkg.name])
 
-            # install packages with best matching architectures
-            archs = {}
-            for match in exactmatch:
-                archs[match.arch] = match
-            arch = self.yum.arch.get_best_arch_from_list(archs.keys())
-            if arch:
-                pkg = archs[arch]
-                if pkg:
-                    self.yum.install(pkg)
+                # install packages with best matching architectures
+                archs = {}
+                for match in exactmatch:
+                    archs[match.arch] = match
+                arch = self.yum.arch.get_best_arch_from_list(archs.keys())
+                if arch:
+                    pkg = archs[arch]
+                    if pkg:
+                        if snap.config.options.log_level_at_least('verbose'):
+                            snap.callback.snapcallback.message("Restoring package " + pkg.name);
+                        self.yum.install(pkg)
 
         # build / run the transaction
         self.yum.buildTransaction()

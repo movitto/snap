@@ -30,13 +30,13 @@ class Mysql:
         DAEMON='mysqld'
 
         # hack until we re-introduce package system abstraction:
-        PREREQ_INSTALL_COMMAND='yum install mysql-server mysql'
+        PREREQ_INSTALL_COMMAND='yum install -y mysql-server mysql'
 
     elif snap.osregistru.OS.apt_based():
         DAEMON='mysql'
 
         # hack until we re-introduce package system abstraction:
-        PREREQ_INSTALL_COMMAND='apt-get install mysql-server mysql-client'
+        PREREQ_INSTALL_COMMAND='apt-get install -y mysql-server mysql-client'
 
     DATADIR='/var/lib/mysql'
 
@@ -101,7 +101,7 @@ class Mysql:
         return snap.osregistry.OS.is_linux() and os.path.isfile("/etc/init.d/" + Mysql.DAEMON)
 
     def install_prereqs(self):
-        popen = subprocess.Popen(PREREQ_INSTALL_COMMAND.split())
+        popen = subprocess.Popen(Mysql.PREREQ_INSTALL_COMMAND.split())
         popen.wait()
 
     def backup(self, basedir):

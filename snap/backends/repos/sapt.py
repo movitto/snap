@@ -33,6 +33,10 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
           
     def restore(self, basedir):
         '''restore yum configuration and repositories'''
+        # return if we cannot find require files
+        if not os.path.isdir(basedir + "/etc/apt"):
+            return
+
         # restore the apt config to /etc/apt
         for apt_conf in FileManager.get_all_files(include_dirs=[basedir + "/etc/apt"]):
             partial_path = apt_conf.replace(basedir, "")

@@ -38,14 +38,14 @@ class Postgresql:
         DATADIR='/var/lib/pgsql/data'
 
         # hack until we re-introduce package system abstraction:
-        PREREQ_INSTALL_COMMAND='yum install postgresql-server postgresql'
+        PREREQ_INSTALL_COMMAND='yum install -y postgresql-server postgresql'
 
     elif snap.osregistry.OS.apt_based():
         VERSION=os.listdir('/var/lib/postgresql')[0]
         DATADIR='/var/lib/postgresql/'+VERSION+'/main'
 
         # hack until we re-introduce package system abstraction:
-        PREREQ_INSTALL_COMMAND='apt-get install postgresql'
+        PREREQ_INSTALL_COMMAND='apt-get install -y postgresql'
 
     DAEMON='postgresql'
 
@@ -135,10 +135,6 @@ class Postgresql:
         if snap.osregistry.OS.apt_based():
             return
 
-        # if the datadir already exists, just return
-        if os.path.isdir(data_dir):
-            return
-
         null=open('/dev/null', 'w')
 
         # FIXME should run initdb manually
@@ -151,7 +147,7 @@ class Postgresql:
         return snap.osregistry.OS.is_linux() and os.path.isfile("/etc/init.d/" + Postgresql.DAEMON)
 
     def install_prereqs(self):
-        popen = subprocess.Popen(PREREQ_INSTALL_COMMAND.split())
+        popen = subprocess.Popen(Postgresql.PREREQ_INSTALL_COMMAND.split())
         popen.wait()
 
     def backup(self, basedir):

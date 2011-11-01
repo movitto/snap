@@ -36,6 +36,10 @@ class Syum(snap.snapshottarget.SnapshotTarget):
           
     def restore(self, basedir):
         '''restore yum configuration and repositories'''
+        # return if we cannot find require files
+        if not os.path.isdir(basedir + "/etc/yum.repos.d"):
+            return
+
         # first restore yum configuration
         SFile("/etc/yum.conf").copy_to(self.fs_root, path_prefix=basedir)
 
