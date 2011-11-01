@@ -77,7 +77,6 @@ class SnapBase:
         # temp directory used to construct tarball 
         construct_dir = '/tmp/snap' + snap.config.options.snapfile.replace("/", "-") + ".d"
         FileManager.make_dir(construct_dir)
-        os.chmod(construct_dir, 0777)
 
         backends = self.load_backends()
         for target in SnapshotTarget.BACKENDS: # load from SnapshotTarget to preserve order
@@ -106,7 +105,6 @@ class SnapBase:
         # temp directory used to construct tarball 
         construct_dir = '/tmp/snap' + snap.config.options.snapfile.replace("/", "-") + ".d"
         FileManager.make_dir(construct_dir)
-        os.chmod(construct_dir, 0777)
 
         SnapFile(snapfile=snap.config.options.snapfile,
                  snapdirectory=construct_dir,

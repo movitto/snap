@@ -159,13 +159,24 @@ class Postgresql:
         current_euid, current_dir = Postgresql.set_postgres_user()
 
         # use a pipe to invoke pg_dumpall and capture output
+        # need to write to a tempfile first as the postgres user will not
+        #  have write access to the snapshot construction directory
+        tfile = tempfile.TemporaryFile()
+
         # FIXME it seems merely switching user id doesn't suffice, need to su to postgres
-        outfile = file(basedir + "/dump.psql", "w")
-        pipe = subprocess.Popen(["su", "postgres", "-c", "pg_dumpall"], stdout=outfile)
+        pipe = subprocess.Popen(["su", "postgres", "-c", "pg_dumpall"], stdout=tfile)
         pipe.wait()
 
         # switch back to the original user
         Postgresql.restore_user(current_euid, current_dir)
+
+        # now that we have full permissions again, copy the contents of the tempfile
+        tfile.seek(0)
+        c = tfile.read()
+        tfile.close()
+        outfile = file(basedir + "/dump.psql", "w")
+        outfile.write(c)
+        outfile.close
 
         # if postgresql was running b4hand, start up again
         if not already_running:
