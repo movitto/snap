@@ -49,6 +49,10 @@ class Syum(snap.snapshottarget.SnapshotTarget):
 
     def restore(self, basedir):
         '''restore the packages from the snapfile'''
+        # if package record file isn't found, simply return
+        if not os.path.isfile(basedir + "/packages.xml"):
+            return
+
         if snap.config.options.log_level_at_least('verbose'):
             snap.callback.snapcallback.message("Restoring packages using yum backend");
 

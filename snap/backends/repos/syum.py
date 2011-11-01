@@ -37,11 +37,12 @@ class Syum(snap.snapshottarget.SnapshotTarget):
     def restore(self, basedir):
         '''restore yum configuration and repositories'''
         # first restore yum configuration
-        SFile(basedir + "/etc/yum.conf").copy_to(self.fs_root)
+        SFile("/etc/yum.conf").copy_to(self.fs_root, path_prefix=basedir)
 
         # then restore individual repos
         for yum_repo in FileManager.get_all_files(include_dirs=[basedir + "/etc/yum.repos.d"]):
-            SFile(yum_repo).copy_to(self.fs_root)
+            partial_path = yum_repo.replace(basedir, "")
+            SFile(partial_path).copy_to(self.fs_root, path_prefix=basedir)
 
         # update the system
         # TODO Replace this w/ the right api call at some point

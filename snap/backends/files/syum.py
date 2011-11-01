@@ -83,6 +83,9 @@ class Syum(snap.snapshottarget.SnapshotTarget):
 
     def restore(self, basedir):
         """restore the files in the snapfile"""
+        # if files record file isn't found, simply return
+        if not os.path.isfile(basedir + "/files.xml"):
+            return
 
         if snap.config.options.log_level_at_least('verbose'):
             snap.callback.snapcallback.message("Restoring files using yum backend");

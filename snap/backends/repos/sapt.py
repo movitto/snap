@@ -35,4 +35,5 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
         '''restore yum configuration and repositories'''
         # restore the apt config to /etc/apt
         for apt_conf in FileManager.get_all_files(include_dirs=[basedir + "/etc/apt"]):
-            SFile(apt_conf).copy_to(self.fs_root)
+            partial_path = apt_conf.replace(basedir, "")
+            SFile(apt_conf).copy_to(self.fs_root, path_prefix=basedir)

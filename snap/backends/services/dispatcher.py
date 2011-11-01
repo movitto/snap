@@ -13,6 +13,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+import os
+
 from snap.metadata.service import Service, ServicesRecordFile
 
 # TODO at some point support a directory for snap services configuration,
@@ -88,6 +90,9 @@ class Dispatcher(snap.snapshottarget.SnapshotTarget):
 
     def restore(self, basedir):
         """run restore on the snapfile"""
+        # if files record file isn't found, simply return
+        if not os.path.isfile(basedir + "/services.xml"):
+            return
 
         record = ServicesRecordFile(basedir + "/services.xml")
         services = record.read()
