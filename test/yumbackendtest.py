@@ -66,8 +66,9 @@ class YumBackendTest(unittest.TestCase):
         restore_target.fs_root = self.fs_root
         restore_target.restore(self.basedir)
 
-        self.assertTrue(os.path.exists(self.fs_root + self.basedir + "/etc/yum.conf"))
-        self.assertTrue(os.path.exists(self.fs_root + self.basedir + "/etc/yum.repos.d/foo.repo"))
+
+        self.assertTrue(os.path.exists(self.fs_root + "/etc/yum.conf"))
+        self.assertTrue(os.path.exists(self.fs_root + "/etc/yum.repos.d/foo.repo"))
 
     def testBackupPackages(self):
         backup_target = snap.backends.packages.syum.Syum()
