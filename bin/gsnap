@@ -16,7 +16,7 @@
 import os
 import sys
 import time
-#import threading
+import threading
 
 GLADE_FILE="/usr/share/snap/snap-redux.glade"
 if not os.path.isfile(GLADE_FILE):
@@ -26,12 +26,27 @@ LOGO_FILE='/usr/share/snap/snap.png'
 if not os.path.isfile(LOGO_FILE):
     LOGO_FILE=os.path.dirname(os.path.realpath(__file__)) + "/../resources/snap.png"
 
-import snap
-import snap.callback
+import snap, snap.config, snap.callback
 #from snap.exceptions import *
 #from snap.configmanager import ConfigManager
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk, GObject
+
+# A helper class to launch the backup / restore operation in a thread
+class GSnapThread(threading.Thread):
+  def __init__(self, snapbase):
+      threading.Thread.__init__ ( self )
+      self.snapbase = snapbase
+      self.error = None
+
+  def run(self):
+      try:
+          if snap.config.options.mode == snap.config.ConfigOptions.BACKUP:
+              self.snapbase.backup()
+          else:
+              self.snapbase.restore()
+      except (snap.exceptions.SnapError), e:
+          self.error = e
 
 # The main window
 class ModeSelectionWindow:
@@ -87,7 +102,7 @@ class BackupOperationWindow:
        self.builder = Gtk.Builder() 
        self.builder.add_objects_from_file(GLADE_FILE, 
           [ "backup_options",      "backup_snapfile",        "backup_log_level", 
-            "backup_repos_toggle", "backup_packages_toggle",
+            "backup_repos_toggle", "backup_packages_toggle", "backup_services_toggle",
             "backup_files_toggle", "select_backup_files_button",
             "backup_encryption_toggle", "backup_encryption_key"])
        self.window = self.builder.get_object("backup_options") 
@@ -113,26 +128,30 @@ class BackupOperationWindow:
 
     def _setup_log_levels(self):
         combobox = self.builder.get_object("backup_log_level")
-        combobox.append_text("quiet")
-        combobox.append_text("normal")
-        combobox.append_text("verbose")
-        combobox.append_text("debug")
+        self.log_levels = ["quiet", "normal", "verbose", "debug"]
+        for level in self.log_levels:
+            combobox.append_text(level)
 
     def _get_config(self):
-        snap.config.options.log_level = self.builder.get_object("backup_log_level").get_active_text()
-        snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_text()
+        # get_active_text() is not working for me
+        snap.config.options.log_level = self.log_levels[self.builder.get_object("backup_log_level").get_active()]
+        snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_uri().replace("file://", "")
+
+        snap.config.options.mode = snap.config.ConfigOptions.BACKUP
 
         password = self.builder.get_object("backup_encryption_key").get_text()
         if password != "Password":
             snap.config.options.encryption_password = password
 
-        if self.builder.get_object("backup_repos_toggle").get_active():
-            snap.config.options.target_backends['repos'] = True
-        if self.builder.get_object("backup_packages_toggle").get_active():
-            snap.config.options.target_backends['packages'] = True
+        
+        snap.config.options.target_backends['repos'] = self.builder.get_object("backup_repos_toggle").get_active()
+        snap.config.options.target_backends['packages'] = self.builder.get_object("backup_packages_toggle").get_active()
+        snap.config.options.target_backends['services'] = self.builder.get_object("backup_services_toggle").get_active()
         if self.builder.get_object("backup_files_toggle").get_active():
             snap.config.options.target_backends['files'] = True
             snap.config.options.target_includes['files'] = BackupFilesSelectionWindow.get_instance().get_files()
+        else:
+            snap.config.options.target_backends['files'] = False
 
 
     def start_backup(self, widget):
@@ -141,7 +160,13 @@ class BackupOperationWindow:
         conf.read_config()
         self._get_config()
         conf.verify_integrity()
-        self.snapbase.backup()
+        snapbase = snap.SnapBase()
+
+        # run the backup / report any errors
+        th = GSnapThread(snapbase)
+        th.start()
+        if th.error:
+            GSnapCallback.get_instance().append_to_buffer(th.error.message)
         OutputDialog.get_instance().quit_when_closed = True
 
     def close_backup_window(self, widget):
@@ -179,7 +204,7 @@ class RestoreOperationWindow:
          ["restore_options", "restore_snapfile", "restore_log_level",
           "restore_encryption_toggle", "restore_encryption_key"])
        self.window = self.builder.get_object("restore_options") 
-                                        
+
        # map the gui signals
        self.builder.connect_signals(self)
        self.window.connect("destroy", self.close_restore_window)
@@ -191,14 +216,16 @@ class RestoreOperationWindow:
 
     def _setup_log_levels(self):
         combobox = self.builder.get_object("restore_log_level")
-        combobox.append_text("quiet")
-        combobox.append_text("normal")
-        combobox.append_text("verbose")
-        combobox.append_text("debug")
+        self.log_levels = ["quiet", "normal", "verbose", "debug"]
+        for level in self.log_levels:
+            combobox.append_text(level)
 
     def _get_config(self):
-        snap.config.options.log_level = self.builder.get_object("restore_log_level").get_active_text()
-        snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_text()
+        # get_active_text() is not working for me
+        snap.config.options.log_level = self.log_levels[self.builder.get_object("backup_log_level").get_active()]
+        snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_uri().replace("file://", "")
+
+        snap.config.options.mode = snap.config.ConfigOptions.RESTORE
 
         password = self.builder.get_object("restore_encryption_key").get_text()
         if password != "Password":
@@ -211,7 +238,12 @@ class RestoreOperationWindow:
         self._get_config()
         conf.verify_integrity()
         snapbase = snap.SnapBase()
-        snapbase.restore()
+        
+        # run the restore / report any errors
+        th = GSnapThread(snapbase)
+        th.start()
+        if th.error:
+            GSnapCallback.get_instance().append_to_buffer(e.message)
         OutputDialog.get_instance().quit_when_closed = True
 
     def close_restore_window(self, widget):
@@ -265,12 +297,13 @@ class OutputDialog:
        OutputDialog.set_instance(self)
 
        self.builder = Gtk.Builder() 
-       self.builder.add_objects_from_file(GLADE_FILE, ["output_window", "output_text"])
+       self.builder.add_objects_from_file(GLADE_FILE, 
+         ["output_window", "output_text", "output_closed_button"])
        self.window = self.builder.get_object("output_window") 
 
        # map the gui signals
-       #dic = { "close_output_dialog"      : self.close_dialog}
        self.builder.connect_signals(self)
+       self.window.connect("destroy", self.close_output_dialog)
 
        # set the output buffer
        snap.callback.snapcallback.set_output_buffer(self.builder.get_object("output_text").get_buffer())
@@ -380,22 +413,35 @@ class SelectDirectoryDialog:
 
 # Redirect callback text to main window
 class GSnapCallback(snap.callback.Callback):
+    @classmethod
+    def set_instance(cls, instance):
+       '''store a singleton instance of this window for future reference'''
+       cls.instance = instance
+
+    @classmethod
+    def get_instance(cls):
+        '''get singleton instance of this class'''
+        return cls.instance
+
+    def __init__(self):
+        GSnapCallback.set_instance(self)
+
     def set_output_buffer(self, output_buffer):
         self.outputbuffer = output_buffer
 
-    def _append_to_buffer(self, newtext):
+    def append_to_buffer(self, newtext):
         # always show the output dialog on new text
-        OutputDialog.get_instance().run()
+        Gdk.threads_enter()
+        OutputDialog.get_instance().show()
 
-        Gtk.gdk.threads_enter()
         nl = ''
         if self.outputbuffer.get_char_count() != 0:
             nl = '\n'
         self.outputbuffer.insert(self.outputbuffer.get_end_iter(), nl + newtext)
-        Gtk.gdk.threads_leave()
+        Gdk.threads_leave()
 
     def message(self, msg):
-        self._append_to_buffer(msg)
+        self.append_to_buffer(msg)
 
     def warn(self, warning):
         self._append_to_buffer("WARNING: " + warning)
@@ -413,4 +459,8 @@ if __name__ == "__main__":
     ModeSelectionWindow().show()
 
     # start gtk loop
+    Gdk.threads_init()
+    GObject.threads_init()
+    Gdk.threads_enter()
     Gtk.main()
+    Gdk.threads_leave()

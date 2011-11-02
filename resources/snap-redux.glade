@@ -335,6 +335,23 @@
                         <property name="position">5</property>
                       </packing>
                     </child>
+                    <child>
+                      <object class="GtkCheckButton" id="backup_services_toggle">
+                        <property name="label" translatable="yes">Backup services</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="margin_top">5</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="xalign">0</property>
+                        <property name="draw_indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">6</property>
+                      </packing>
+                    </child>
                   </object>
                 </child>
               </object>
@@ -471,15 +488,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="label11">
+              <object class="GtkLinkButton" id="linkbutton1">
+                <property name="label" translatable="yes">http://projects.morsi.org/snap.s</property>
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">http://projects.morsi.org/snap</property>
-                <attributes>
-                  <attribute name="font-desc" value="Sans 10"/>
-                  <attribute name="underline" value="True"/>
-                  <attribute name="foreground" value="#0000088effff"/>
-                </attributes>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="has_tooltip">True</property>
+                <property name="use_action_appearance">False</property>
+                <property name="relief">none</property>
+                <property name="uri">http://projects.morsi.org/snap</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -502,7 +519,7 @@
             <property name="margin_top">10</property>
             <property name="label" translatable="yes">Snap is an extensible system backup and restoration utility that uses the underlying package management system and tooling to perform all operations.
 
-It may be easily extended by defining additional snapshot and restoration targets to interface with the underlying system which then are invoked in sequence on a user's request.
+It may be easily extended by defining additional snapshot and restoration targets to interface with the underlying system which then are invoked in sequence upon a user's request.
 
 To use, simply select mode of operation and then select the snapfile which to backup to or restore from as well as any optional parameters.
 
@@ -642,60 +659,45 @@ It's that simple!</property>
       </object>
     </child>
   </object>
-  <object class="GtkDialog" id="output_window">
+  <object class="GtkWindow" id="output_window">
     <property name="can_focus">False</property>
-    <property name="border_width">5</property>
-    <property name="type_hint">dialog</property>
-    <child internal-child="vbox">
-      <object class="GtkBox" id="dialog-vbox2">
+    <property name="resizable">False</property>
+    <property name="modal">True</property>
+    <child>
+      <object class="GtkFixed" id="fixed1">
+        <property name="height_request">235</property>
+        <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox" id="dialog-action_area2">
-            <property name="can_focus">False</property>
-            <property name="layout_style">end</property>
-            <child>
-              <object class="GtkButton" id="close_output">
-                <property name="label" translatable="yes">Close</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
+        <child>
+          <object class="GtkTextView" id="output_text">
+            <property name="width_request">430</property>
+            <property name="height_request">195</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
           </object>
           <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack_type">end</property>
-            <property name="position">0</property>
+            <property name="x">5</property>
+            <property name="y">5</property>
           </packing>
         </child>
         <child>
-          <object class="GtkTextView" id="output_text">
-            <property name="width_request">435</property>
-            <property name="height_request">250</property>
+          <object class="GtkButton" id="output_close_button">
+            <property name="label" translatable="yes">Close</property>
+            <property name="width_request">81</property>
+            <property name="height_request">23</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="editable">False</property>
+            <property name="receives_default">True</property>
+            <property name="use_action_appearance">False</property>
+            <signal name="clicked" handler="close_output_dialog" swapped="no"/>
           </object>
           <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
+            <property name="x">350</property>
+            <property name="y">206</property>
           </packing>
         </child>
       </object>
     </child>
-    <action-widgets>
-      <action-widget response="0">close_output</action-widget>
-    </action-widgets>
   </object>
   <object class="GtkWindow" id="restore_options">
     <property name="can_focus">False</property>
