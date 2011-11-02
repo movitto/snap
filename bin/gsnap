@@ -137,7 +137,7 @@ class BackupOperationWindow:
         snap.config.options.log_level = self.log_levels[self.builder.get_object("backup_log_level").get_active()]
         snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_uri().replace("file://", "")
 
-        #snap.config.options.mode = snap.config.ConfigOptions.BACKUP
+        snap.config.options.mode = snap.config.ConfigOptions.BACKUP
 
         password = self.builder.get_object("backup_encryption_key").get_text()
         if password != "Password":
@@ -149,7 +149,9 @@ class BackupOperationWindow:
         snap.config.options.target_backends['services'] = self.builder.get_object("backup_services_toggle").get_active()
         if self.builder.get_object("backup_files_toggle").get_active():
             snap.config.options.target_backends['files'] = True
-            snap.config.options.target_includes['files'] = BackupFilesSelectionWindow.get_instance().get_files()
+            files = BackupFilesSelectionWindow.get_instance().get_files()
+            if len(files) > 0:
+                snap.config.options.target_includes['files'] = files
         else:
             snap.config.options.target_backends['files'] = False
 
@@ -259,23 +261,23 @@ class RestoreOperationWindow:
             # FIXME this will cause a deadlock since we are in the thread
             #GSnapCallback.get_instance().append_to_buffer(e.message)
 
-    def close_restore_window(self, widget):
-        self.window.hide()
-        ModeSelectionWindow.get_instance().show()
-
     def restore_encryption_toggled(self, widget):
         key = self.builder.get_object("restore_encryption_key")
         key.set_visible(widget.get_active())
 
-    def restore_encryption_key_focus_in(self, widget):
+    def restore_encryption_key_focus_in(self, widget, param):
         if widget.get_text() == "Password":
             widget.set_text("")
             widget.set_visibility(False)
 
-    def restore_encryption_key_focus_out(self, widget):
+    def restore_encryption_key_focus_out(self, widget, param):
         if widget.get_text() == "":
             widget.set_text("Password")
             widget.set_visibility(True)
+
+    def close_restore_window(self, widget):
+        self.window.hide()
+        ModeSelectionWindow.get_instance().show()
 
 # The help dialog
 class HelpDialog:
@@ -468,6 +470,7 @@ if __name__ == "__main__":
     snap.callback.snapcallback = GSnapCallback()
 
     # initialize windows
+    BackupFilesSelectionWindow()
     OutputDialog()
     ModeSelectionWindow().show()
 
