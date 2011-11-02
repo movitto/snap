@@ -63,7 +63,7 @@ class AptBackendTest(unittest.TestCase):
         restore_target.fs_root = self.fs_root
         restore_target.restore(self.basedir)
 
-        self.assertTrue(os.path.exists(self.fs_root + self.basedir + "/etc/apt/foo"))
+        self.assertTrue(os.path.exists(self.fs_root + "/etc/apt/foo"))
 
     def testBackupPackages(self):
         backup_target = snap.backends.packages.sapt.Sapt()

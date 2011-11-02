@@ -828,7 +828,7 @@ It's that simple!</property>
                             <property name="xalign">1</property>
                             <property name="invisible_char_set">True</property>
                             <signal name="focus-in-event" handler="restore_encryption_key_focus_in" swapped="no"/>
-                            <signal name="focus-in-event" handler="restore_encryption_key_focus_out" swapped="no"/>
+                            <signal name="focus-out-event" handler="restore_encryption_key_focus_out" swapped="no"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>

@@ -122,7 +122,7 @@ class SnapFile:
         tarball.close()
 
         if snap.config.options.log_level_at_least('normal'):
-            snap.callback.snapcallback.message("Snapfile " + self.snapfile + " restored")
+            snap.callback.snapcallback.message("Snapfile " + self.snapfile + " opened")
 
         # restore the working directory
         os.chdir(cwd)
