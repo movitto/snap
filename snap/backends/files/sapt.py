@@ -14,6 +14,7 @@
 # GNU General Public License for more details.
 
 import os
+import re
 import apt
 
 import snap
@@ -51,7 +52,7 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
 
         # seems that comparing the modified_time against this time is the only way togo
         # http://lists.netisland.net/archives/plug/plug-2008-02/msg00205.html
-        pkg_modified_time = os.stat('/var/lib/dpkg/info/' + pkg.sourcePackageName + '.list').st_mtime
+        pkg_modified_time = os.stat('/var/lib/dpkg/info/' + pkg.name + '.list').st_mtime
         
         if modified_time > pkg_modified_time:
             return True
@@ -59,17 +60,19 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
         # finally if the file is a deb conffile, we just assume its modified since
         # there is no way to determine if the file was modified before the package
         # was updated (see the link above)
-        c = FileManager.read_file('/var/lib/dpkg/info/' + pkg.sourcePackageName + '.conffiles')
-        if len(re.findall(file_name, c)) > 0:
-            return True
+        conf_file='/var/lib/dpkg/info/' + pkg.name + '.conffiles'
+        if os.path.isfile(conf_file):
+            c = FileManager.read_file(conf_file)
+            if len(re.findall(file_name, c)) > 0:
+                return True
 
         return False
 
     def backup(self, basedir, include=[], exclude=[]):
-        """backup the files modified outside the yum package system"""
+        """backup the files modified outside the apt package system"""
 
         if snap.config.options.log_level_at_least('verbose'):
-            snap.callback.snapcallback.message("Backing up files using yum backend");
+            snap.callback.snapcallback.message("Backing up files using apt backend");
 
         if len(include) == 0:
             include = ['/']
@@ -106,7 +109,7 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
             return
 
         if snap.config.options.log_level_at_least('verbose'):
-            snap.callback.snapcallback.message("Restoring files using yum backend");
+            snap.callback.snapcallback.message("Restoring files using apt backend");
 
         # read files from the record file
         record = FilesRecordFile(basedir + "/files.xml")

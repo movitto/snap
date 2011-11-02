@@ -42,8 +42,12 @@ class Postgresql:
         PREREQ_INSTALL_COMMAND='yum install -y postgresql-server postgresql'
 
     elif snap.osregistry.OS.apt_based():
-        VERSION=os.listdir('/var/lib/postgresql')[0]
-        DATADIR='/var/lib/postgresql/'+VERSION+'/main'
+        if os.path.isdir('/var/lib/postgresql'):
+            VERSION=os.listdir('/var/lib/postgresql')[0]
+            DATADIR='/var/lib/postgresql/'+VERSION+'/main'
+        else:
+            VERSION=None
+            DATADIR=None
 
         # hack until we re-introduce package system abstraction:
         PREREQ_INSTALL_COMMAND='apt-get install -y postgresql'

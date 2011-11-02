@@ -32,7 +32,7 @@ class Mysql:
         # hack until we re-introduce package system abstraction:
         PREREQ_INSTALL_COMMAND='yum install -y mysql-server mysql'
 
-    elif snap.osregistru.OS.apt_based():
+    elif snap.osregistry.OS.apt_based():
         DAEMON='mysql'
 
         # hack until we re-introduce package system abstraction:
