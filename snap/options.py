@@ -2,7 +2,7 @@ SNAP_VERSION='0.5'
 
 # default location which to write snapshots
 #  (timestamp and 'tgz' extension will be appended)
-DEFAULT_SNAPFILE='/tmp/snap'
+DEFAULT_SNAPFILE='/tmp/snap-shot.tgz'
 
 # locations which to load snap! configuration from
 CONFIG_FILES=['/etc/snap.conf', '~/.snap']

@@ -137,7 +137,7 @@ class BackupOperationWindow:
         snap.config.options.log_level = self.log_levels[self.builder.get_object("backup_log_level").get_active()]
         snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_uri().replace("file://", "")
 
-        snap.config.options.mode = snap.config.ConfigOptions.BACKUP
+        #snap.config.options.mode = snap.config.ConfigOptions.BACKUP
 
         password = self.builder.get_object("backup_encryption_key").get_text()
         if password != "Password":
@@ -156,18 +156,23 @@ class BackupOperationWindow:
 
     def start_backup(self, widget):
         OutputDialog.get_instance().show()
-        conf = snap.config.Config()
-        conf.read_config()
-        self._get_config()
-        conf.verify_integrity()
-        snapbase = snap.SnapBase()
+        try:
+          conf = snap.config.Config()
+          conf.read_config()
+          self._get_config()
+          conf.verify_integrity()
+          snapbase = snap.SnapBase()
 
-        # run the backup / report any errors
-        th = GSnapThread(snapbase)
-        th.start()
-        if th.error:
-            GSnapCallback.get_instance().append_to_buffer(th.error.message)
-        OutputDialog.get_instance().quit_when_closed = True
+          # run the backup / report any errors
+          th = GSnapThread(snapbase)
+          th.start()
+          if th.error:
+              raise th.error
+          OutputDialog.get_instance().quit_when_closed = True
+        except (snap.exceptions.SnapError), e:
+            print "ERROR ", e.message
+            # FIXME this will cause a deadlock since we are in the thread
+            #GSnapCallback.get_instance().append_to_buffer(e.message)
 
     def close_backup_window(self, widget):
         self.window.hide()
@@ -221,11 +226,14 @@ class RestoreOperationWindow:
             combobox.append_text(level)
 
     def _get_config(self):
-        # get_active_text() is not working for me
-        snap.config.options.log_level = self.log_levels[self.builder.get_object("backup_log_level").get_active()]
-        snap.config.options.snapfile  = self.builder.get_object("backup_snapfile").get_uri().replace("file://", "")
-
         snap.config.options.mode = snap.config.ConfigOptions.RESTORE
+
+        if self.builder.get_object("restore_snapfile").get_uri() == None:
+            return
+
+        # get_active_text() is not working for me
+        snap.config.options.log_level = self.log_levels[self.builder.get_object("restore_log_level").get_active()]
+        snap.config.options.snapfile  = self.builder.get_object("restore_snapfile").get_uri().replace("file://", "")
 
         password = self.builder.get_object("restore_encryption_key").get_text()
         if password != "Password":
@@ -233,18 +241,23 @@ class RestoreOperationWindow:
 
     def start_restore(self, widget):
         OutputDialog.get_instance().show()
-        conf = snap.config.Config()
-        conf.read_config()
-        self._get_config()
-        conf.verify_integrity()
-        snapbase = snap.SnapBase()
-        
-        # run the restore / report any errors
-        th = GSnapThread(snapbase)
-        th.start()
-        if th.error:
-            GSnapCallback.get_instance().append_to_buffer(e.message)
-        OutputDialog.get_instance().quit_when_closed = True
+        try:
+            conf = snap.config.Config()
+            conf.read_config()
+            self._get_config()
+            conf.verify_integrity()
+            snapbase = snap.SnapBase()
+
+            # run the restore / report any errors
+            th = GSnapThread(snapbase)
+            th.start()
+            if th.error:
+                raise th.error
+            OutputDialog.get_instance().quit_when_closed = True
+        except (snap.exceptions.SnapError), e:
+            print "ERROR ", e.message
+            # FIXME this will cause a deadlock since we are in the thread
+            #GSnapCallback.get_instance().append_to_buffer(e.message)
 
     def close_restore_window(self, widget):
         self.window.hide()
