@@ -15,6 +15,7 @@
 
 import os
 import re
+import pwd
 import tempfile
 import subprocess
 
@@ -134,6 +135,15 @@ class Postgresql:
         # no need to do this on debian / ubuntu as its already taken care of
         if snap.osregistry.OS.apt_based():
             return
+
+        # XXX hack needed as for some reason datadir is not owned by postgres user
+        pg_user = pwd.getpwnam('postgres')
+        for root,dirs,files in os.walk(data_dir + "/../"):
+            os.chown(root, pg_user.pw_uid, pg_user.pw_gid)
+            for d in dirs:
+                os.chown(os.path.join(root, d), pg_user.pw_uid, pg_user.pw_gid)
+            for f in files:
+                os.chown(os.path.join(root, f), pg_user.pw_uid, pg_user.pw_gid)
 
         null=open('/dev/null', 'w')
 
