@@ -49,6 +49,8 @@ class SFile(object):
             os.chown(basedir + self.directory, ofs.st_uid, ofs.st_gid)
 
         if os.path.islink(path_prefix + self.path):
+            if os.path.isfile(basedir + self.path):
+                os.remove(basedir + self.path)
             realpath = os.path.realpath(path_prefix + self.path)
             os.symlink(realpath, basedir + self.path)
 
