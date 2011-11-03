@@ -10,7 +10,7 @@ Homepage: http://projects.morsi.org/snap
 
 Package: snap
 Architecture: all
-Depends: python, python-support (>= 0.90)
+Depends: python, python-support (>= 0.90), python-crypto
 Description: a system backup/restoration utility
  an extensible system snapshotter utility which uses the
  underlying package management system to take and restore

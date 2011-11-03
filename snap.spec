@@ -13,6 +13,7 @@ BuildRequires:	python2-devel
 %if 0%{?with_python3}
 BuildRequires:  python3-devel
 %endif # if with_python3
+Requires:  python-crypto
 
 %description
 Snap! is a system snapshot utility which uses the underlying package
