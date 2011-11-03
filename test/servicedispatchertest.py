@@ -43,13 +43,13 @@ class ServiceDispatcherTest(unittest.TestCase):
         shutil.rmtree(self.basedir)
 
     def testStartStopRunningService(self):
-        is_running = Dispatcher.service_running('postgresql')
-        Dispatcher.start_service('postgresql')
-        self.assertTrue(Dispatcher.service_running('postgresql'))
-        Dispatcher.stop_service('postgresql')
-        self.assertFalse(Dispatcher.service_running('postgresql'))
+        is_running = Dispatcher.service_running(snap.backends.services.adapters.httpd.Httpd.DAEMON)
+        Dispatcher.start_service(snap.backends.services.adapters.httpd.Httpd.DAEMON)
+        self.assertTrue(Dispatcher.service_running(snap.backends.services.adapters.httpd.Httpd.DAEMON))
+        Dispatcher.stop_service(snap.backends.services.adapters.httpd.Httpd.DAEMON)
+        self.assertFalse(Dispatcher.service_running(snap.backends.services.adapters.httpd.Httpd.DAEMON))
         if is_running:
-            Dispatcher.start_service('postgresql')
+            Dispatcher.start_service(snap.backends.services.adapters.httpd.Httpd.DAEMON)
 
     def testLoadServices(self):
         services_path = os.path.join(os.path.dirname(__file__), "../snap/backends/services/adapters")
