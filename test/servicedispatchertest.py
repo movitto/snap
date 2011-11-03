@@ -30,6 +30,7 @@ import snap.backends.services.adapters.mock
 import snap.backends.services.adapters.iptables
 import snap.backends.services.adapters.postgresql
 import snap.backends.services.adapters.mysql
+import snap.backends.services.adapters.httpd
 
 class ServiceDispatcherTest(unittest.TestCase):
     def setUp(self):
@@ -375,3 +376,51 @@ class ServiceDispatcherTest(unittest.TestCase):
         popen = subprocess.Popen(["iptables-restore", self.basedir + "/iptables-backup"])
         popen.wait()
         self.assertEqual(0, popen.returncode)
+
+    def testHttpdService(self):
+        # backup the http conf directory and document roots
+        test_backup_dir = self.basedir + "/snap-http-test/"
+        if os.path.isdir(test_backup_dir):
+            shutil.rmtree(test_backup_dir)
+        shutil.copytree(snap.backends.services.adapters.httpd.Httpd.CONF_D, test_backup_dir + "conf_d")
+        shutil.copytree(snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT, test_backup_dir + "doc_root")
+
+        # run the backup
+        test_base_dir = self.basedir + "/snap-http-basedir/"
+        backend = snap.backends.services.adapters.httpd.Httpd()
+        backend.backup(test_base_dir)
+
+        # ensure conf.d and document root were backed up
+        bfiles = []
+        for root,dirs,files in os.walk(snap.backends.services.adapters.httpd.Httpd.CONF_D):
+            for hfile in files:
+                rfile = root + "/" + hfile
+                ffile = test_base_dir + rfile
+                self.assertTrue(os.path.isfile(ffile))
+                bfiles.append(root + "/" + hfile)
+        for root,dirs,files in os.walk(snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT):
+            for hfile in files:
+                rfile = root + "/" + hfile
+                ffile = test_base_dir + rfile
+                self.assertTrue(os.path.isfile(ffile))
+                bfiles.append(root + "/" + hfile)
+        self.assertTrue(os.path.isfile(test_base_dir + "service-http.xml"))
+
+        # run the restore
+        shutil.rmtree(snap.backends.services.adapters.httpd.Httpd.CONF_D)
+        shutil.rmtree(snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT)
+        backend.restore(test_base_dir)
+
+        # ensure the files backed up were restored
+        for hfile in bfiles:
+            self.assertTrue(os.path.isfile(hfile))
+
+        # ensure the service is running
+        self.assertTrue(Dispatcher.service_running(snap.backends.services.adapters.httpd.Httpd.DAEMON))
+
+        # restore backup
+        shutil.rmtree(snap.backends.services.adapters.httpd.Httpd.CONF_D)
+        shutil.rmtree(snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT)
+        shutil.copytree(test_backup_dir + "conf_d",   snap.backends.services.adapters.httpd.Httpd.CONF_D)
+        shutil.copytree(test_backup_dir + "doc_root", snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT)
+        shutil.rmtree(test_backup_dir)

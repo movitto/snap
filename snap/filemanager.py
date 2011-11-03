@@ -107,16 +107,15 @@ class FileManager:
             for name in os.listdir(directory):
                 fullpath = os.path.join(directory, name)
                 # add all files in the directory
-                if os.path.isfile(fullpath) and not os.path.islink(fullpath) and \
-                   not fullpath in files:
-                       files.append(fullpath)
+                if os.path.isfile(fullpath) and not fullpath in files:
+                    files.append(fullpath)
 
             # iterate over all subdirectories
             subdirs = FileManager.get_all_subdirectories(directory)
             for subdirectory in subdirs:
                 fullpath = os.path.join(directory, subdirectory)
                 # exclude those in the exclude list
-                if not os.path.islink(fullpath) and not fullpath in exclude_dirs:
+                if not fullpath in exclude_dirs:
                     subdir_files = FileManager.get_all_files([fullpath], exclude_dirs)
                     # add all files in the subdirectory
                     for subdir_file in subdir_files:
@@ -135,14 +134,13 @@ class FileManager:
         for item in os.listdir(directory):
             fullpath = os.path.join(directory,item)
             # get subdirectories
-            if os.path.isdir(fullpath) and not os.path.islink(fullpath) and \
-               not fullpath in subdirs:
-                   subdirs.append(fullpath)
-                   # recusrively iterate over subdirectories
-                   if recursive:
-                       subsubdirs = FileManager.get_all_subdirectories(fullpath)
-                       for subsubdir in subsubdirs:
-                           if not subsubdir in subdirs:
-                               subdirs.append(subsubdir)
+            if os.path.isdir(fullpath) and not fullpath in subdirs:
+                subdirs.append(fullpath)
+                # recusrively iterate over subdirectories
+                if recursive:
+                    subsubdirs = FileManager.get_all_subdirectories(fullpath)
+                    for subsubdir in subsubdirs:
+                        if not subsubdir in subdirs:
+                            subdirs.append(subsubdir)
         return subdirs
     get_all_subdirectories = staticmethod(get_all_subdirectories)

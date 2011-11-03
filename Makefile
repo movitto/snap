@@ -38,3 +38,7 @@ deb: clean
 
 distclean: clean
 
+test:
+	${PYTHON} test/run.py
+
+.PHONY: test
