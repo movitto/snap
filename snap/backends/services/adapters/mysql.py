@@ -57,6 +57,14 @@ class Mysql:
         return has_db
     db_exists=staticmethod(db_exists)
 
+    def flush_privileges():
+        '''helper to flush database privileges'''
+        null=open('/dev/null', 'w')
+
+        popen = subprocess.Popen(["mysql", "-e", "flush privileges;"], stdout=null, stderr=null)
+        popen.wait()
+    flush_privileges=staticmethod(flush_privileges)
+
     def create_db(dbname):
         '''helper to create the specified database'''
         null=open('/dev/null', 'w')
@@ -138,3 +146,6 @@ class Mysql:
         infile = file(basedir + "/dump.mysql", "r")
         popen = subprocess.Popen("mysql", stdin=infile, stdout=null, stderr=null)
         popen.wait()
+
+        # flush privileges incase any roles were restored and whatnot
+        Mysql.flush_privileges()
