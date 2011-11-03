@@ -36,8 +36,6 @@ class SFile(object):
         path_components.pop()
         self.directory = '/'.join(path_components)
 
-        # FIXME need to store if the file is a link or not!!!!
-
     def copy_to(self, basedir, path_prefix=''):
         '''copy the sfile to the specified base directory, replicating the directory structure
            of the path under it
@@ -50,7 +48,11 @@ class SFile(object):
             ofs = os.stat(path_prefix + self.directory)
             os.chown(basedir + self.directory, ofs.st_uid, ofs.st_gid)
 
-        if os.path.isfile(path_prefix + self.path):
+        if os.path.islink(path_prefix + self.path):
+            realpath = os.path.realpath(path_prefix + self.path)
+            os.symlink(realpath, basedir + self.path)
+
+        elif os.path.isfile(path_prefix + self.path):
             shutil.copyfile(path_prefix + self.path, basedir + self.path)
             shutil.copystat(path_prefix + self.path, basedir + self.path)
             ofs = os.stat(path_prefix + self.path)

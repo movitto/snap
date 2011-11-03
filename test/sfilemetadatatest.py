@@ -83,3 +83,20 @@ class SFileMetadataTest(unittest.TestCase):
 
         shutil.rmtree(source_dir)
         shutil.rmtree(dest_dir)
+
+    def testSFileCopyLinkTo(self):
+        basedir    = os.path.join(os.path.dirname(__file__), "data")
+        source     = basedir + "/sourcelink"
+        destdir    = basedir + "/destdir"
+
+        os.makedirs(destdir)
+
+        os.symlink("/foobar", source)
+        sfile = SFile(source)
+        sfile.copy_to(destdir)
+
+        self.assertTrue(os.path.islink(destdir + source))
+        self.assertEqual("/foobar", os.path.realpath(destdir + source))
+
+        shutil.rmtree(destdir)
+        os.remove(source)
