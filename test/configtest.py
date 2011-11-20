@@ -88,6 +88,11 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual('/tmp/test-snap-shot', snap.config.options.snapfile)
         self.assertEqual('quiet', snap.config.options.log_level)
         self.assertEqual('foobar', snap.config.options.encryption_password)
+        
+        self.assertIn("postgresql_password", snap.config.options.service_options.keys())
+        self.assertEqual("postgres", snap.config.options.service_options["postgresql_password"])
+        self.assertIn("mysql_password", snap.config.options.service_options.keys())
+        self.assertEqual("mysql", snap.config.options.service_options["mysql_password"])
         pass
 
     def testValidateMode(self):
@@ -99,10 +104,9 @@ class ConfigTest(unittest.TestCase):
         pass
 
     def testValidateRestoreSnapFile(self):
-        # ensure that if snap is in restore mode and snapfile
-        # is not set, error is thrown
+        # ensure that if snapfile is not set, error is thrown
         snap.config.options.mode = snap.config.ConfigOptions.RESTORE
-        snap.config.options.snapfile = snap.options.DEFAULT_SNAPFILE
+        snap.config.options.snapfile = None
         config = snap.config.Config()
         with self.assertRaises(snap.exceptions.ArgError) as context:
             config.verify_integrity()

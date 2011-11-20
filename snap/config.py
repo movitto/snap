@@ -28,32 +28,35 @@ class ConfigOptions:
 
     # modes of operation
     RESTORE = 0
-    BACKUP  = 1
+    BACKUP = 1
 
     def __init__(self):
         '''initialize configuration'''
 
         # mode of operation
-        self.mode=None
+        self.mode = None
 
         # mapping of targets to lists of backends to use when backing up / restoring them
-        self.target_backends={}
+        self.target_backends = {}
 
         # mapping of targets to lists of entities to include when backing up
-        self.target_includes={}
+        self.target_includes = {}
 
         # mapping of targets to lists of entities to exclude when backing up
-        self.target_excludes={}
+        self.target_excludes = {}
 
         # output log level
         # currently supports 'quiet', 'normal', 'verbose', 'debug'
-        self.log_level='normal'
+        self.log_level = 'normal'
 
         # location of the snapfile to backup to / restore from
-        self.snapfile=DEFAULT_SNAPFILE
+        self.snapfile = None
 
         # Encryption/decryption password to use, if left as None, encryption will be disabled
-        self.encryption_password=None
+        self.encryption_password = None
+        
+        # hash of key/value pairs of service-specific options
+        self.service_options = {}
 
         for backend in SnapshotTarget.BACKENDS:
             self.target_backends[backend] = False
@@ -64,7 +67,7 @@ class ConfigOptions:
         return (comparison == 'quiet') or \
                (comparison == 'normal'  and self.log_level != 'quiet') or \
                (comparison == 'verbose' and (self.log_level == 'verbose' or self.log_level == 'debug')) or \
-               (comparison == 'debug'   and self.log_level  == 'debug')
+               (comparison == 'debug'   and self.log_level == 'debug')
 
 class ConfigFile:
     """Represents the snap config file to be read and parsed"""
@@ -81,7 +84,7 @@ class ConfigFile:
         # if config file doesn't exist, just ignore
         if not os.path.exists(config_file):
             if snap.config.options.log_level_at_least("verbose"):
-                snap.callback.snapcallback.warn("Config file " + config_file +" not found")
+                snap.callback.snapcallback.warn("Config file " + config_file + " not found")
         else:
             self.parser = ConfigParser.ConfigParser()
             self.parser.read(config_file)
@@ -94,14 +97,14 @@ class ConfigFile:
         elif string == 'False' or string == 'false' or string == '0':
             return False
         return None
-    string_to_bool=staticmethod(string_to_bool)
+    string_to_bool = staticmethod(string_to_bool)
 
     def string_to_array(string):
         '''Static helper to convert a colon deliminated string to an array of strings'''
         return string.split(':')
-    string_to_array=staticmethod(string_to_array)
+    string_to_array = staticmethod(string_to_array)
 
-    def __get_bool(self, key, section = 'main'):
+    def __get_bool(self, key, section='main'):
         '''
         Retreive the indicated boolean value from the config file
 
@@ -115,7 +118,7 @@ class ConfigFile:
         except:
             return None
 
-    def __get_string(self, key, section = 'main'):
+    def __get_string(self, key, section='main'):
         '''
         Retreive the indicated string value from the config file
 
@@ -128,7 +131,18 @@ class ConfigFile:
             return self.parser.get(section, key)
         except:
             return None
-
+        
+    def __get_array(self, section='main'):
+        '''return array of key/value pairs from the config file section
+        
+        @param section - the section which to retrieve the key / values from
+        @returns - the array of key / value pairs or None if not found
+        '''
+        try:
+            return self.parser.items(section)
+        except:
+            return None
+        
     def __parse(self):
         '''parse configuration out of the config file'''
         for backend in SnapshotTarget.BACKENDS:
@@ -152,8 +166,8 @@ class ConfigFile:
                     if val:
                         snap.config.options.target_backends[backend] = False
 
-        sf  = self.__get_string('snapfile')
-        ll  = self.__get_string('loglevel')
+        sf = self.__get_string('snapfile')
+        ll = self.__get_string('loglevel')
         enp = self.__get_string('encryption_password')
         
         if sf != None:
@@ -162,17 +176,24 @@ class ConfigFile:
             snap.config.options.log_level = ll
         if enp != None:
             snap.config.options.encryption_password = enp
+            
+        services = self.__get_array('services')
+        if services:
+            for k, v in services:
+                snap.config.options.service_options[k] = v
 
 class Config:
     """The configuration manager, used to set and verify snap config values 
        from the config file and command line. Primary interface to the 
        Configuration System"""
     
-    configoptions=None
-    parser=None
+    configoptions = None
+    parser = None
 
     # read values from the config files and set them in the target ConfigOptions
     def read_config(self):
+        # add conf stored in resources if running from local checkout 
+        self.fs_root = os.path.join(os.path.dirname(__file__), "..", "resources", "snap.conf")
         for config_file in CONFIG_FILES:
           ConfigFile(config_file)
 
@@ -183,15 +204,15 @@ class Config:
 
         usage = "usage: %prog [options] arg"
         self.parser = optparse.OptionParser(usage, version=SNAP_VERSION)
-        self.parser.add_option('', '--restore', dest = 'restore', action='store_true', default=False, help='Restore snapshot')
-        self.parser.add_option('', '--backup', dest = 'backup', action='store_true', default=False, help='Take snapshot')
-        self.parser.add_option('-l', '--log-level', dest = 'log_level', action='store', default="normal", help='Log level (quiet, normal, verbose, debug)')
-        self.parser.add_option('-f', '--snapfile', dest = 'snapfile', action='store', default=None, help='Snapshot file')
-        self.parser.add_option('-p', '--password',  dest = 'encryption_password',  action='store', default=None, help='Snapshot File Encryption/Decryption Password')
+        self.parser.add_option('', '--restore', dest='restore', action='store_true', default=False, help='Restore snapshot')
+        self.parser.add_option('', '--backup', dest='backup', action='store_true', default=False, help='Take snapshot')
+        self.parser.add_option('-l', '--log-level', dest='log_level', action='store', default="normal", help='Log level (quiet, normal, verbose, debug)')
+        self.parser.add_option('-f', '--snapfile', dest='snapfile', action='store', default=None, help='Snapshot file')
+        self.parser.add_option('-p', '--password', dest='encryption_password', action='store', default=None, help='Snapshot File Encryption/Decryption Password')
         # FIXME how to permit parameter lists for some of these
         for backend in SnapshotTarget.BACKENDS:
-            self.parser.add_option('', '--'   + backend, dest = backend, action='store_true', help='Enable '  + backend + ' snapshots/restoration')
-            self.parser.add_option('', '--no' + backend, dest = backend, action='store_false', help='Disable ' + backend + ' snapshots/restoration')
+            self.parser.add_option('', '--' + backend, dest=backend, action='store_true', help='Enable ' + backend + ' snapshots/restoration')
+            self.parser.add_option('', '--no' + backend, dest=backend, action='store_false', help='Disable ' + backend + ' snapshots/restoration')
 
         (options, args) = self.parser.parse_args()
         if options.restore != False:
@@ -199,11 +220,11 @@ class Config:
         if options.backup != False:
             snap.config.options.mode = ConfigOptions.BACKUP
         if options.log_level:
-            snap.config.options.log_level=options.log_level
+            snap.config.options.log_level = options.log_level
         if options.snapfile != None:
-            snap.config.options.snapfile=options.snapfile
+            snap.config.options.snapfile = options.snapfile
         if options.encryption_password != None:
-            snap.config.options.encryption_password=options.encryption_password
+            snap.config.options.encryption_password = options.encryption_password
         for backend in SnapshotTarget.BACKENDS:
             val = getattr(options, backend)
             if val != None:
@@ -226,8 +247,8 @@ class Config:
         '''
         if snap.config.options.mode == None: # mode not specified
             raise snap.exceptions.ArgError("Must specify backup or restore")
-        if snap.config.options.mode == ConfigOptions.RESTORE and snap.config.options.snapfile == DEFAULT_SNAPFILE: # need to specify snapfile when restoring
+        if snap.config.options.snapfile == None: # need to specify snapfile location
             raise snap.exceptions.ArgError("Must specify snapfile")
 
 # static shared options
-options=ConfigOptions()
+options = ConfigOptions()

@@ -15,55 +15,29 @@
 
 import os
 
-from snap.metadata.service import Service, ServicesRecordFile
-
-# TODO at some point support a directory for snap services configuration,
-#   something like /etc/snap.d/ where specific configurations for various
-#   services to backup / restore can be stored
-
-
 import snap
-import subprocess
+from snap.osregistry import OS
+from snap.metadata.service import Service, ServicesRecordFile
 
 class Dispatcher(snap.snapshottarget.SnapshotTarget):
     '''implements the snap! services target backend, dispatching to handlers '''
-
-    #def __init__(self):
-
-    def service_running(service):
-        '''helper to return boolean indicating if the specified service is running'''
-        out=open('/dev/null', 'w')
-        popen = subprocess.Popen(["service", service, "status"], stdout=out, stderr=out)
-        popen.wait()
-        return popen.returncode == 0
-    service_running=staticmethod(service_running)
-
-    def start_service(service):
-        '''helper to start the specified service
-        
-        @returns boolean indicating if service was started or not'''
-        out=open('/dev/null', 'w')
-        popen = subprocess.Popen(["service", service, "start"], stdout=out, stderr=out)
-        popen.wait()
-        return popen.returncode == 0
-    start_service=staticmethod(start_service)
-
-    def stop_service(service):
-        '''helper to stop the specified service
-        
-        @returns boolean indicating if service was stopped or not'''
-        out=open('/dev/null', 'w')
-        popen = subprocess.Popen(["service", service, "stop"], stdout=out, stderr=out)
-        popen.wait()
-        return popen.returncode == 0
-    stop_service=staticmethod(stop_service)
+    
+    def os_dispatcher():
+        '''helper to get the os specific dispatcher'''
+        if OS.is_windows():
+            import snap.backends.services.windowsdispatcher
+            return snap.backends.services.windowsdispatcher.WindowsDispatcher
+        else:
+            import snap.backends.services.linuxdispatcher
+            return snap.backends.services.linuxdispatcher.LinuxDispatcher
+    os_dispatcher = staticmethod(os_dispatcher)
 
     def load_service(self, service):
         '''initialize the specified service adapter'''
 
         # Dynamically load the module
         service_module_name = "snap.backends.services.adapters." + service
-        class_name =  service.capitalize()
+        class_name = service.capitalize()
         service_module = __import__(service_module_name, globals(), locals(), [class_name])
 
         # instantiate the backend class
@@ -104,5 +78,10 @@ class Dispatcher(snap.snapshottarget.SnapshotTarget):
             # install the prerequisites if the services is not available
             if not service_instance.is_available():
                 service_instance.install_prereqs()
-            service_instance.restore(basedir)
-        
+            
+            if service_instance.is_available():
+                service_instance.restore(basedir)
+                
+            # if service is still not available, log this and skip it    
+            elif snap.config.options.log_level_at_least('normal'):
+                snap.callback.snapcallback.message("Could not restore " + sservice.name + " service")

@@ -27,18 +27,18 @@ class SnapFileTest(unittest.TestCase):
         self.assertEqual(context.exception.message, '/invalid/dir is an invalid snap working directory ')
 
     def testCompressSnapFile(self):
-        snapdir = os.path.join(os.path.dirname(__file__), "data/")
-        snapfile = SnapFile(snapdir + "test-snapfile.tgz", snapdir)
+        snapdir = os.path.join(os.path.dirname(__file__), "data")
+        snapfile = SnapFile(os.path.join(snapdir, "test-snapfile.tgz"), snapdir)
         snapfile.compress()
 
-        tarball = tarfile.open(snapdir + "test-snapfile.tgz", "r:gz")
+        tarball = tarfile.open(os.path.join(snapdir, "test-snapfile.tgz"), "r:gz")
         files = []
         for tarinfo in tarball:
             files.append(tarinfo.name)
-        self.assertIn(snapdir[1:] + "tmp/file1", files)
-        self.assertIn(snapdir[1:] + "tmp/subdir/file2", files)
+        self.assertIn(os.path.join("tmp", "file1"), files)
+        self.assertIn(os.path.join("tmp", "subdir", "file2"), files)
 
-        os.remove(snapdir + "test-snapfile.tgz")
+        #os.remove(os.path.join(snapdir, "test-snapfile.tgz"))
 
     def testExtractSnapFile(self):
         snap_file_path = os.path.join(os.path.dirname(__file__), "data/existing-snapfile.tgz")

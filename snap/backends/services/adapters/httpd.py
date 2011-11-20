@@ -14,41 +14,47 @@
 # GNU General Public License for more details.
 
 import os
-import re
-import pwd
-import tempfile
 import subprocess
 
 import snap
+from snap.osregistry import OS, OSUtils
 from snap.metadata.sfile import SFile, FilesRecordFile
 from snap.backends.services.dispatcher import Dispatcher
 
 class Httpd:
 
-    if snap.osregistry.OS.yum_based():
-        DAEMON='httpd'
-        CONF_D='/etc/httpd'
+    if OS.yum_based():
+        DAEMON = 'httpd'
+        CONF_D = '/etc/httpd'
+        DOCUMENT_ROOT = '/var/www'
 
         # hack until we re-introduce package system abstraction:
-        PREREQ_INSTALL_COMMAND='yum install -y httpd'
+        PREREQ_INSTALL_COMMAND = 'yum install -y httpd'
 
-    elif snap.osregistry.OS.apt_based():
-        DAEMON='apache2'
-        CONF_D='/etc/apache2'
+    elif OS.apt_based():
+        DAEMON = 'apache2'
+        CONF_D = '/etc/apache2'
+        DOCUMENT_ROOT = '/var/www'
 
         # hack until we re-introduce package system abstraction:
-        PREREQ_INSTALL_COMMAND='apt-get install -y apache2'
-
-    DOCUMENT_ROOT='/var/www'
-
+        PREREQ_INSTALL_COMMAND = 'apt-get install -y apache2'
+        
+    elif OS.is_windows() and os.path.isdir("C:\Program Files (x86)\Apache Software Foundation"):
+        DAEMON = 'Apache2.2'
+        CONF_D = "C:\\Program Files (x86)\\Apache Software Foundation\\Apache2.2\\conf"
+        DOCUMENT_ROOT = "C:\\Program Files (x86)\\Apache Software Foundation\\Apache2.2\\htdocs"
+        
 
     def is_available(self):
         '''return true if we're on a linux system and the init script is available'''
-        return snap.osregistry.OS.is_linux() and os.path.isfile("/etc/init.d/" + Httpd.DAEMON)
+        return os.path.isdir(Httpd.CONF_D) and os.path.isdir(Httpd.DOCUMENT_ROOT)
 
     def install_prereqs(self):
-        popen = subprocess.Popen(Httpd.PREREQ_INSTALL_COMMAND.split())
-        popen.wait()
+        if OS.is_linux():
+            popen = subprocess.Popen(Httpd.PREREQ_INSTALL_COMMAND.split())
+            popen.wait()
+        # !!!FIXME!!! it is possible to install httpd in an automated / 
+        # non-interactive method on windows, implement this!!!
 
     def backup(self, basedir):
        # backup the webroot, confd
@@ -61,25 +67,29 @@ class Httpd:
                sfiles.append(sfile)
 
        # write record file to basedir
-       record = FilesRecordFile(basedir + "/service-http.xml")
+       record = FilesRecordFile(os.path.join(basedir, "service-http.xml"))
        record.write(sfiles)
 
     def restore(self, basedir):
+        dispatcher = Dispatcher.os_dispatcher()
+        
+        record_file = os.path.join(basedir, "service-http.xml")
+        
         # if files record file isn't found, simply return
-        if not os.path.isfile(basedir + "/service-http.xml"):
+        if not os.path.isfile(record_file):
             return
 
+        # stop the httpd service if already running
+        if dispatcher.service_running(Httpd.DAEMON):
+            dispatcher.stop_service(Httpd.DAEMON)
+            
         # read files from the record file
-        record = FilesRecordFile(basedir + "/service-http.xml")
+        record = FilesRecordFile(record_file)
         sfiles = record.read()
 
         # restore those to their original locations
         for sfile in sfiles:
-            sfile.copy_to('/', basedir)
-
-        # stop the httpd service if already running
-        if Dispatcher.service_running(Httpd.DAEMON):
-            Dispatcher.stop_service(Httpd.DAEMON)
+            sfile.copy_to(path_prefix=basedir)
 
         # start the httpd service
-        Dispatcher.start_service(Httpd.DAEMON)
+        dispatcher.start_service(Httpd.DAEMON)

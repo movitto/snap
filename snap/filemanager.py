@@ -13,7 +13,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-
 import os
 import shutil
 import snap.exceptions
@@ -96,11 +95,14 @@ class FileManager:
             raise snap.exceptions.FilesystemError("Could not read file " + path)
     read_file = staticmethod(read_file)
 
-    def get_all_files(include_dirs=['/'], exclude_dirs=[]):
+    def get_all_files(include_dirs=[], exclude_dirs=[]):
         '''return a list of paths corresponding to files in one or more directories - static method
 
         @param include_dirs - list of directories to start in
         @param exclude_dirs - list of directories to exclude'''
+        if len(include_dirs) == 0:
+            include_dirs.append(snap.osregistry.OS.get_root())
+        
         files = []
         # iterate over each directory in the include list
         for directory in include_dirs:
@@ -124,15 +126,18 @@ class FileManager:
         return files
     get_all_files = staticmethod(get_all_files)
 
-    def get_all_subdirectories(directory='/', recursive = False):
+    def get_all_subdirectories(directory=None, recursive=False):
         '''return a list of full paths to subdirectories under the specified directory
         
         @param directory - the directory to get subdirectories of
         '''
+        if directory == None:
+            directory = snap.osregistry.OS.get_root()
+        
         subdirs = []
         # iterate over all files in directory
         for item in os.listdir(directory):
-            fullpath = os.path.join(directory,item)
+            fullpath = os.path.join(directory, item)
             # get subdirectories
             if os.path.isdir(fullpath) and not fullpath in subdirs:
                 subdirs.append(fullpath)

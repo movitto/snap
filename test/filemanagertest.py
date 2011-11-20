@@ -20,9 +20,9 @@ from snap.filemanager import FileManager
 
 class FileManagerTest(unittest.TestCase):
     def testRmAndExists(self):
-        temp_file_path = os.path.join(os.path.dirname(__file__), "data/temp-file")
+        temp_file_path = os.path.join(os.path.dirname(__file__), "data", "temp-file")
 
-        f=open(temp_file_path, 'w')
+        f = open(temp_file_path, 'w')
         f.write("foo")
         f.close()
         self.assertTrue(os.path.exists(temp_file_path))
@@ -34,10 +34,10 @@ class FileManagerTest(unittest.TestCase):
         self.assertFalse(FileManager.exists(temp_file_path))
 
     def testMv(self):
-        temp_source_file_path = os.path.join(os.path.dirname(__file__), "data/temp-source-file")
-        temp_dest_file_path   = os.path.join(os.path.dirname(__file__), "data/temp-dest-file")
+        temp_source_file_path = os.path.join(os.path.dirname(__file__), "data", "temp-source-file")
+        temp_dest_file_path = os.path.join(os.path.dirname(__file__), "data", "temp-dest-file")
 
-        f=open(temp_source_file_path, 'w')
+        f = open(temp_source_file_path, 'w')
         f.write("foo")
         f.close()
         self.assertTrue(os.path.isfile(temp_source_file_path))
@@ -49,7 +49,7 @@ class FileManagerTest(unittest.TestCase):
         os.remove(temp_dest_file_path)
 
     def testMakeDirAndExists(self):
-        temp_dir_path = os.path.join(os.path.dirname(__file__), "data/temp-dir")
+        temp_dir_path = os.path.join(os.path.dirname(__file__), "data", "temp-dir")
 
         FileManager.make_dir(temp_dir_path)
         self.assertTrue(os.path.exists(temp_dir_path))
@@ -61,14 +61,14 @@ class FileManagerTest(unittest.TestCase):
         self.assertFalse(FileManager.exists(temp_dir_path))
 
     def testRmDir(self):
-        temp_dir_path = os.path.join(os.path.dirname(__file__), "data/temp-dir")
+        temp_dir_path = os.path.join(os.path.dirname(__file__), "data", "temp-dir")
 
         os.mkdir(temp_dir_path)
         FileManager.rm_dir(temp_dir_path)
         self.assertFalse(os.path.exists(temp_dir_path))
 
     def testReadFile(self):
-        temp_file_path = os.path.join(os.path.dirname(__file__), "data/read-file")
+        temp_file_path = os.path.join(os.path.dirname(__file__), "data", "read-file")
 
         f = open(temp_file_path, 'w')
         f.write('foobar')
@@ -80,21 +80,22 @@ class FileManagerTest(unittest.TestCase):
 
 
     def testGetAllFiles(self):
-        data_path = os.path.join(os.path.dirname(__file__), "data/tmp")
+        data_path = os.path.join(os.path.dirname(__file__), "data", "tmp")
         files = FileManager.get_all_files(include_dirs=[data_path])
-        self.assertIn(data_path + "/file1", files)
-        self.assertIn(data_path + "/subdir/file2", files)
+        self.assertIn(os.path.join(data_path, "file1"), files)
+        self.assertIn(os.path.join(data_path, "subdir", "file2"), files)
 
-        files = FileManager.get_all_files(include_dirs=[data_path], exclude_dirs=[data_path+'/subdir'])
-        self.assertIn(data_path + "/file1", files)
-        self.assertNotIn(data_path + "/subdir/file2", files)
+        files = FileManager.get_all_files(include_dirs=[data_path],
+                                          exclude_dirs=[os.path.join(data_path, 'subdir')])
+        self.assertIn(os.path.join(data_path, "file1"), files)
+        self.assertNotIn(os.path.join(data_path, "subdir", "file2"), files)
 
     def testGetAllSubdirectories(self):
-        data_path = os.path.join(os.path.dirname(__file__), "data/")
+        data_path = os.path.join(os.path.dirname(__file__), "data")
         subdirs = FileManager.get_all_subdirectories(data_path, recursive=True)
-        self.assertIn(data_path + "tmp", subdirs)
-        self.assertIn(data_path + "tmp/subdir", subdirs)
+        self.assertIn(os.path.join(data_path, "tmp"), subdirs)
+        self.assertIn(os.path.join(data_path, "tmp", "subdir"), subdirs)
 
         subdirs = FileManager.get_all_subdirectories(data_path, recursive=False)
-        self.assertIn(data_path + "tmp", subdirs)
-        self.assertNotIn(data_path + "tmp/subdir", subdirs)
+        self.assertIn(os.path.join(data_path, "tmp"), subdirs)
+        self.assertNotIn(os.path.join(data_path, "tmp/subdir"), subdirs)

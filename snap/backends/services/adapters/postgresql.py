@@ -15,57 +15,67 @@
 
 import os
 import re
-import pwd
 import tempfile
 import subprocess
 
-from snap.backends.services.dispatcher import Dispatcher
-
-# TODO at some point use the postgresql-python api to
-# implement something akin to pg_dump / pg_dumpall
-#import psycopg2
-
-# TODO because user may have restricted postgres user access
-#  in pg_hba.conf, we switch to the postgres system user before 
-#  running the command, should retrieve postgres credentials
-#  from a the snap services configuration directory
-import pwd
-
 import snap
+from snap.osregistry import OS, OSUtils
+from snap.backends.services.dispatcher import Dispatcher
 
 class Postgresql:
 
-    if snap.osregistry.OS.yum_based():
-        DATADIR='/var/lib/pgsql/data'
+    if OS.yum_based():
+        DATADIR = '/var/lib/pgsql/data'
+        DAEMON = 'postgresql'
+        PSQL_CMD = '/usr/bin/psql'
+        PGDUMPALL_CMD = '/usr/bin/pg_dumpall'
 
         # hack until we re-introduce package system abstraction:
-        PREREQ_INSTALL_COMMAND='yum install -y postgresql-server postgresql'
+        PREREQ_INSTALL_COMMAND = 'yum install -y postgresql-server postgresql'
 
-    elif snap.osregistry.OS.apt_based():
-        if os.path.isdir('/var/lib/postgresql'):
-            VERSION=os.listdir('/var/lib/postgresql')[0]
-            DATADIR='/var/lib/postgresql/'+VERSION+'/main'
-        else:
-            VERSION=None
-            DATADIR=None
+    elif OS.apt_based() and os.path.isdir('/var/lib/postgresql'):
+        VERSION = os.listdir('/var/lib/postgresql')[0]
+        DATADIR = '/var/lib/postgresql/' + VERSION + '/main'
+        DAEMON = 'postgresql'
+        PSQL_CMD = '/usr/bin/psql'
+        PGDUMPALL_CMD = '/usr/bin/pg_dumpall'
 
         # hack until we re-introduce package system abstraction:
-        PREREQ_INSTALL_COMMAND='apt-get install -y postgresql'
-
-    DAEMON='postgresql'
-
+        PREREQ_INSTALL_COMMAND = 'apt-get install -y postgresql'
+        
+    elif OS.is_windows() and os.path.isdir("C:\Program Files\PostgreSQL"):
+        VERSION = os.listdir('C:\Program Files\PostgreSQL')[0]
+        DATADIR = os.path.join("C:\Program Files\PostgreSQL", VERSION, "data")
+        DAEMON = 'postgresql-x64-' + VERSION # FIXME also support 32 bit
+        PSQL_CMD = os.path.join("C:\Program Files\PostgreSQL", VERSION, "bin\psql.exe")
+        PGDUMPALL_CMD = os.path.join("C:\Program Files\PostgreSQL", VERSION, "bin\pg_dumpall.exe")
+    
+    else:
+        VERSION = None
+        DATADIR = None
+        DAEMON = None
+        PSQL_CMD = None
+        PGDUMPALL_CMD = None
+    
+    def set_pgpassword_env():
+        '''helper to set the postgres password in the env from the config'''
+        pgpassword = snap.config.options.service_options['postgresql_password']
+        penv = os.environ
+        penv['PGPASSWORD'] = pgpassword
+        return penv
+    set_pgpassword_env = staticmethod(set_pgpassword_env)
 
     def db_exists(dbname):
         '''helper to return boolean indicating if the db w/ the specified name exists'''
-        null=open('/dev/null', 'w')
+        null = open(OSUtils.null_file(), 'w')
 
-        # switch to the postgres user
-        current_euid = os.geteuid()
-        os.seteuid(pwd.getpwnam('postgres').pw_uid)
+        # get the env containing the postgres password
+        penv = Postgresql.set_pgpassword_env()
 
         # retrieve list of db names from postgres
         t = tempfile.TemporaryFile()
-        popen = subprocess.Popen(["psql", "-t", "-c", "select datname from pg_database"], stdout=t, stderr=null)
+        popen = subprocess.Popen([Postgresql.PSQL_CMD, "--username", "postgres", "-t", "-c", "select datname from pg_database"],
+                                 env=penv, stdout=t, stderr=null)
         popen.wait()
 
         # determine if the specified one is among them
@@ -73,147 +83,108 @@ class Postgresql:
         c = t.read()
         has_db = len(re.findall(dbname, c))
 
-        # switch back to the original user
-        os.seteuid(current_euid)
-
         return has_db
-    db_exists=staticmethod(db_exists)
-
-    def set_postgres_user():
-        '''helper to set the current user to the postgres system user
-
-        @return current user and homedir'''
-        current_euid = os.geteuid()
-        current_dir  = os.getcwd()
-        pg_user = pwd.getpwnam('postgres')
-        os.chdir(pg_user.pw_dir)
-        os.seteuid(pg_user.pw_uid)
-        return (current_euid, current_dir)
-    set_postgres_user=staticmethod(set_postgres_user)
-
-    def restore_user(current_euid, current_dir):
-        '''helper to restore the current user / directory after changing w/ set_postgres_user
-
-        @return current user and homedir'''
-        os.seteuid(current_euid)
-        os.chdir(current_dir)
-    restore_user=staticmethod(restore_user)
-
+    db_exists = staticmethod(db_exists)
+    
     def create_db(dbname):
         '''helper to create the specified database'''
-        null=open('/dev/null', 'w')
-
-        # switch to the postgres user
-        current_euid, current_dir = Postgresql.set_postgres_user()
+        null = open(OSUtils.null_file(), 'w')
+        
+        # get env containing the postgres password
+        penv = Postgresql.set_pgpassword_env()
 
         # create the db
-        popen = subprocess.Popen(["psql", "-c", "CREATE DATABASE " + dbname], stdout=null, stderr=null)
+        popen = subprocess.Popen([Postgresql.PSQL_CMD, "--username", "postgres", "-c", "CREATE DATABASE " + dbname],
+                                 env=penv, stdout=null, stderr=null)
         popen.wait()
-
-        # switch back to the original user
-        Postgresql.restore_user(current_euid, current_dir)
-    create_db=staticmethod(create_db)
+    create_db = staticmethod(create_db)
 
     def drop_db(dbname):
         '''helper to drop the specified database'''
-        null=open('/dev/null', 'w')
+        null = open(OSUtils.null_file(), 'w')
 
-        # switch to the postgres user
-        current_euid, current_dir = Postgresql.set_postgres_user()
+        # get env containing the postgres password
+        penv = Postgresql.set_pgpassword_env()
 
         # destroy the db
-        popen = subprocess.Popen(["psql", "-c", "DROP DATABASE " + dbname], stdout=null, stderr=null)
+        popen = subprocess.Popen([Postgresql.PSQL_CMD, "--username", "postgres", "-c", "DROP DATABASE " + dbname],
+                                 env=penv, stdout=null, stderr=null)
         popen.wait()
+    drop_db = staticmethod(drop_db)
 
-        # switch back to the original user
-        Postgresql.restore_user(current_euid, current_dir)
-    drop_db=staticmethod(drop_db)
+    def set_root_pass():
+        '''helper to clear the mysql root password'''
+        # !!!FIXME!!! implement, can be accomplished by su'ing to the postgres user on linux
+    set_root_pass = staticmethod(set_root_pass)
 
-    def init_db(data_dir=DATADIR):
+    def init_db():
         '''helper to initialize the database server'''
 
         # db already initialized, just return
-        if os.path.isdir(data_dir) and len(os.listdir(data_dir)) > 0:
+        if os.path.isdir(Postgresql.DATADIR) and len(os.listdir(Postgresql.DATADIR)) > 0:
             return
 
-        # no need to do this on debian / ubuntu as its already taken care of
-        if snap.osregistry.OS.apt_based():
-            return
-
-        # XXX hack needed as for some reason datadir is not owned by postgres user
-        pg_user = pwd.getpwnam('postgres')
-        for root,dirs,files in os.walk(data_dir + "/../"):
-            os.chown(root, pg_user.pw_uid, pg_user.pw_gid)
-            for d in dirs:
-                os.chown(os.path.join(root, d), pg_user.pw_uid, pg_user.pw_gid)
-            for f in files:
-                os.chown(os.path.join(root, f), pg_user.pw_uid, pg_user.pw_gid)
-
-        null=open('/dev/null', 'w')
+        null = open(OSUtils.null_file(), 'w')
 
         # FIXME should run initdb manually
         popen = subprocess.Popen(["service", "postgresql", "initdb"], stdout=null)
         popen.wait()
-    init_db=staticmethod(init_db)
+    init_db = staticmethod(init_db)
 
     def is_available(self):
-        '''return true if we're on a linux system and the init script is available'''
-        return snap.osregistry.OS.is_linux() and os.path.isfile("/etc/init.d/" + Postgresql.DAEMON)
+        '''return true postgres is available locally'''
+        return os.path.isdir(Postgresql.DATADIR)
 
     def install_prereqs(self):
-        popen = subprocess.Popen(Postgresql.PREREQ_INSTALL_COMMAND.split())
-        popen.wait()
+        if OS.is_linux():
+            popen = subprocess.Popen(Postgresql.PREREQ_INSTALL_COMMAND.split())
+            popen.wait()
+        # !!!FIXME!!! it is possible to install postgresql in an automated / 
+        # non-interactive method on windows, implement this!!!
 
     def backup(self, basedir):
+        dispatcher = Dispatcher.os_dispatcher()
+        null = open(OSUtils.null_file(), 'w')
+                
+        if OS.is_linux():
+            Postgresql.set_root_pass()
+        
         # check to see if service is running
-        already_running = Dispatcher.service_running(Postgresql.DAEMON)
+        already_running = dispatcher.service_running(Postgresql.DAEMON)
 
         # start the postgresql server
-        Dispatcher.start_service(Postgresql.DAEMON)
+        dispatcher.start_service(Postgresql.DAEMON)
 
-        # switch to the postgres user
-        current_euid, current_dir = Postgresql.set_postgres_user()
+        # get env containing postgres password
+        penv = Postgresql.set_pgpassword_env()
 
-        # use a pipe to invoke pg_dumpall and capture output
-        # need to write to a tempfile first as the postgres user will not
-        #  have write access to the snapshot construction directory
-        tfile = tempfile.TemporaryFile()
-
-        # FIXME it seems merely switching user id doesn't suffice, need to su to postgres
-        pipe = subprocess.Popen(["su", "postgres", "-c", "pg_dumpall"], stdout=tfile)
-        pipe.wait()
-
-        # switch back to the original user
-        Postgresql.restore_user(current_euid, current_dir)
-
-        # now that we have full permissions again, copy the contents of the tempfile
-        tfile.seek(0)
-        c = tfile.read()
-        tfile.close()
         outfile = file(basedir + "/dump.psql", "w")
-        outfile.write(c)
-        outfile.close
+        pipe = subprocess.Popen([Postgresql.PGDUMPALL_CMD, "--username", "postgres"],
+                                env=penv, stdout=outfile, stderr=null)
+        pipe.wait()
 
         # if postgresql was running b4hand, start up again
         if not already_running:
-            Dispatcher.stop_service(Postgresql.DAEMON)
+            dispatcher.stop_service(Postgresql.DAEMON)
 
     def restore(self, basedir):
-        null=open('/dev/null', 'w')
+        dispatcher = Dispatcher.os_dispatcher()
+        null = open(OSUtils.null_file(), 'w')
+        
+        if OS.is_linux():
+            Postgresql.set_root_pass()
 
         # init the postgresql db
         Postgresql.init_db()
 
         # start the postgresql service
-        Dispatcher.start_service(Postgresql.DAEMON)
+        dispatcher.start_service(Postgresql.DAEMON)
 
-        # switch to the postgres user
-        current_euid, current_dir = Postgresql.set_postgres_user()
+        # get env containing the postgresql password
+        penv = Postgresql.set_pgpassword_env()
 
         # use pipe to invoke postgres, restoring database
         infile = file(basedir + "/dump.psql", "r")
-        popen = subprocess.Popen("psql", stdin=infile, stdout=null, stderr=null)
+        popen = subprocess.Popen([Postgresql.PSQL_CMD, "--username", "postgres"],
+                                 env=penv, stdin=infile, stdout=null, stderr=null)
         popen.wait()
-
-        # switch back to the original user
-        Postgresql.restore_user(current_euid, current_dir)

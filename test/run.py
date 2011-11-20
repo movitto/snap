@@ -22,28 +22,38 @@ import snap
 import callback
 
 import configtest
-import cryptotest
 import filemanagertest
 import packagemetadatatest
 import servicesmetadatatest
 import sfilemetadatatest
 import snapfiletest
+import osregistrytest
 import snaptest
 import servicedispatchertest
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(configtest.ConfigTest))
-    suite.addTest(unittest.makeSuite(cryptotest.CryptoTest))
     suite.addTest(unittest.makeSuite(filemanagertest.FileManagerTest))
     suite.addTest(unittest.makeSuite(packagemetadatatest.PackageMetadataTest))
     suite.addTest(unittest.makeSuite(servicesmetadatatest.ServicesMetadataTest))
     suite.addTest(unittest.makeSuite(sfilemetadatatest.SFileMetadataTest))
     suite.addTest(unittest.makeSuite(snapfiletest.SnapFileTest))
+    suite.addTest(unittest.makeSuite(osregistrytest.OsRegistryTest))
     suite.addTest(unittest.makeSuite(servicedispatchertest.ServiceDispatcherTest))
     suite.addTest(unittest.makeSuite(snaptest.SnapBaseTest))
     
-    if snap.osregistry.OS.yum_based():
+    if snap.osregistry.OS.is_windows():
+        pass
+    else:
+        # TODO when we have crypto support on windows, move this out of here
+        import cryptotest
+        suite.addTest(unittest.makeSuite(cryptotest.CryptoTest))
+    
+    if snap.osregistry.OS.is_windows():
+        import winbackendtest
+        suite.addTest(unittest.makeSuite(winbackendtest.WinBackendTest))
+    elif snap.osregistry.OS.yum_based():
         import yumbackendtest
         suite.addTest(unittest.makeSuite(yumbackendtest.YumBackendTest))
     elif snap.osregistry.OS.apt_based():

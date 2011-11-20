@@ -18,9 +18,12 @@ import os
 import tarfile
 
 import snap
-from snap.crypto      import Crypto
 from snap.filemanager import FileManager
 from snap.exceptions  import MissingDirError
+
+# skip snapshot encyrption support on windows for the time being
+if not snap.osregistry.OS.is_windows:
+    from snap.crypto      import Crypto
 
 class SnapFile:
     """The snapfile, the end result of the backup operation
@@ -38,9 +41,9 @@ class SnapFile:
             raise MissingDirError(snapdirectory + " is an invalid snap working directory ")
         self.snapfile = snapfile
         self.snapdirectory = snapdirectory
-        self.encryption_password=encryption_password
+        self.encryption_password = encryption_password
 
-        if self.encryption_password != None:
+        if  not snap.osregistry.OS.is_windows() and self.encryption_password != None:
             self.encryption_key = Crypto.generate_key(self.encryption_password)
         else:
             self.encryption_key = None
@@ -49,12 +52,13 @@ class SnapFile:
         '''set attributes of a file for inclusion in a tarball'''
         fs = os.stat(fullpath)
         tarinfo = tarball.gettarinfo(partialpath)
+        tarinfo.name = partialpath
         tarinfo.uid = fs.st_uid
         tarinfo.gid = fs.st_gid
         tarinfo.mtime = fs.st_mtime
         tarinfo.mode = fs.st_mode
         return tarinfo
-    __prepare_file_for_tarball=staticmethod(__prepare_file_for_tarball)
+    __prepare_file_for_tarball = staticmethod(__prepare_file_for_tarball)
         
     def compress(self):
         '''create a snapfile from the snapdirectory
@@ -67,22 +71,24 @@ class SnapFile:
         # temp store the working directory, before changing to the snapdirectory
         cwd = os.getcwd()
         os.chdir(self.snapdirectory)
+        
+        seperator = snap.osregistry.OS.get_path_seperator()
 
         # copy directories into snapfile
         for sdir in FileManager.get_all_subdirectories(os.getcwd(), recursive=True):
-            partialpath = sdir.replace(self.snapdirectory + "/", "")
+            partialpath = sdir.replace(self.snapdirectory + seperator, "")
             tarball.addfile(self.__prepare_file_for_tarball(tarball, sdir, partialpath))
 
         # copy files into snapfile
         for tfile in FileManager.get_all_files(include_dirs=[os.getcwd()]):
-            partialpath = tfile.replace(self.snapdirectory + "/", "")
-            tarball.addfile(self.__prepare_file_for_tarball(tarball, tfile, partialpath), file(tfile))
+            partialpath = tfile.replace(self.snapdirectory + seperator, "")
+            tarball.addfile(self.__prepare_file_for_tarball(tarball, tfile, partialpath), file(tfile, 'rb'))
 
         # finish up tarball creation
         tarball.close()
 
         # encrypt the snapshot if we've set a key
-        if self.encryption_key != None:
+        if not snap.osregistry.OS.is_windows() and self.encryption_key != None:
             if snap.config.options.log_level_at_least('verbose'):
                 snap.callback.snapcallback.message("Encyrpting snapfile")
             Crypto.encrypt_file(self.encryption_key, self.snapfile, self.snapfile + ".enc")
@@ -101,7 +107,7 @@ class SnapFile:
         '''
 
         # decrypt the file if we've set a key
-        if self.encryption_key != None:
+        if not snap.osregistry.OS.is_windows() and self.encryption_key != None:
             if snap.config.options.log_level_at_least('verbose'):
                 snap.callback.snapcallback.message("Decyrpting snapfile")
             Crypto.decrypt_file(self.encryption_key, self.snapfile, self.snapfile + ".dec")

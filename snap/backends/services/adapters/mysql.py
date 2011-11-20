@@ -13,40 +13,66 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-# TODO at some point use the mysql-python api to
-# implement something akin to pg_dump / pg_dumpall
-
 import os
 import re
 import tempfile
 import subprocess
 
 import snap
+from snap.osregistry import OS, OSUtils
 from snap.backends.services.dispatcher import Dispatcher
 
 class Mysql:
 
     if snap.osregistry.OS.yum_based():
-        DAEMON='mysqld'
+        DAEMON = 'mysqld'
+        DATADIR = '/var/lib/mysql'
+        MYSQL_CMD = '/usr/bin/mysql'
+        MYSQLADMIN_CMD = "/usr/bin/mysqladmin"
+        MYSQLDSAFE_CMD = "/usr/bin/mysqld_safe"
+        MYSQLDUMP_CMD = "/usr/bin/mysqldump"
 
         # hack until we re-introduce package system abstraction:
-        PREREQ_INSTALL_COMMAND='yum install -y mysql-server mysql'
+        PREREQ_INSTALL_COMMAND = 'yum install -y mysql-server mysql'
 
     elif snap.osregistry.OS.apt_based():
-        DAEMON='mysql'
+        DAEMON = 'mysql'
+        DATADIR = '/var/lib/mysql'
+        MYSQL_CMD = '/usr/bin/mysql'
+        MYSQLADMIN_CMD = "/usr/bin/mysqladmin"
+        MYSQLDSAFE_CMD = "/usr/bin/mysqld_safe"
+        MYSQLDUMP_CMD = "/usr/bin/mysqldump"
 
         # hack until we re-introduce package system abstraction:
-        PREREQ_INSTALL_COMMAND='apt-get install -y mysql-server mysql-client'
+        PREREQ_INSTALL_COMMAND = 'apt-get install -y mysql-server mysql-client'
 
-    DATADIR='/var/lib/mysql'
+    elif snap.osregistry.OS.is_windows():
+        VERSION = os.listdir('C:\\Program Files\\MySQL')[0].replace("MySQL Server ", "")
+        DATADIR = "C:\\Program Files\\MySQL\\MySQL Server " + VERSION + "\\data"
+        MYSQL_CMD = "C:\\Program Files\\MySQL\\MySQL Server " + VERSION + "\\bin\mysql.exe"
+        MYSQLADMIN_CMD = "C:\\Program Files\\MySQL\\MySQL Server " + VERSION + "\\bin\\mysqladmin.exe"
+        MYSQLDSAFE_CMD = "C:\\Program Files\\MySQL\\MySQL Server " + VERSION + "\\bin\\mysqld_safe.exe"
+        MYSQLDUMP_CMD = "C:\\Program Files\\MySQL\\MySQL Server " + VERSION + "\\bin\\mysqldump.exe"
+        DAEMON = 'MySQL'
+
+    else:
+        VERSION = None
+        DATADIR = None
+        DAEMON = None
+        MYSQL_CMD = None
+        MYSQLADMIN_CMD = None
+        MYSQLDSAFE_CMD = None
 
     def db_exists(dbname):
         '''helper to return boolean indicating if the db w/ the specified name exists'''
-        null=open('/dev/null', 'w')
+        null = open(OSUtils.null_file(), 'w')
+
+        mysql_password = snap.config.options.service_options['mysql_password']
 
         # retrieve list of db names from mysql
         t = tempfile.TemporaryFile()
-        popen = subprocess.Popen(["mysql", "-e", "show databases"], stdout=t, stderr=null)
+        popen = subprocess.Popen([Mysql.MYSQL_CMD, "-e", "show databases", "-u", "root", "-p" + mysql_password],
+                                 stdout=t, stderr=null)
         popen.wait()
 
         # determine if the specified one is among them
@@ -55,96 +81,114 @@ class Mysql:
         has_db = len(re.findall(dbname, c))
 
         return has_db
-    db_exists=staticmethod(db_exists)
+    db_exists = staticmethod(db_exists)
 
     def flush_privileges():
         '''helper to flush database privileges'''
-        null=open('/dev/null', 'w')
+        null = open(OSUtils.null_file(), 'w')
+        
+        mysql_password = snap.config.options.service_options['mysql_password']
 
-        popen = subprocess.Popen(["mysql", "-e", "flush privileges;"], stdout=null, stderr=null)
+        popen = subprocess.Popen([Mysql.MYSQL_CMD, "-p" + mysql_password, "-e", "flush privileges;"],
+                                 stdout=null, stderr=null)
         popen.wait()
-    flush_privileges=staticmethod(flush_privileges)
+    flush_privileges = staticmethod(flush_privileges)
 
     def create_db(dbname):
         '''helper to create the specified database'''
-        null=open('/dev/null', 'w')
+        null = open(OSUtils.null_file(), 'w')
+        
+        mysql_password = snap.config.options.service_options['mysql_password']
 
         # create the db
-        popen = subprocess.Popen(["mysqladmin", "create", dbname], stdout=null, stderr=null)
+        popen = subprocess.Popen([Mysql.MYSQLADMIN_CMD, "-u", "root", "-p" + mysql_password, "create", dbname],
+                                 stdout=null, stderr=null)
         popen.wait()
-    create_db=staticmethod(create_db)
+    create_db = staticmethod(create_db)
 
     def drop_db(dbname):
         '''helper to drop the specified database'''
-        null=open('/dev/null', 'w')
+        null = open(OSUtils.null_file(), 'w')
+
+        mysql_password = snap.config.options.service_options['mysql_password']
 
         # destroy the db
-        popen = subprocess.Popen(["mysqladmin", "-f", "drop", dbname], stdout=null, stderr=null)
+        popen = subprocess.Popen([Mysql.MYSQLADMIN_CMD, "-u", "root", "-p" + mysql_password, "-f", "drop", dbname],
+                                 stdout=null, stderr=null)
         popen.wait()
-    drop_db=staticmethod(drop_db)
+    drop_db = staticmethod(drop_db)
 
-    def clear_root_pass():
-        '''helper to clear the mysql root password'''
-        # TODO at somepoint retrieve / return the root password to restore later
-
-        already_running = Dispatcher.service_running(Mysql.DAEMON)
+    def set_root_pass():
+        '''helper to set the mysql root password'''
+        dispatcher = Dispatcher.os_dispatcher()
+        
+        mysql_password = snap.config.options.service_options['mysql_password']
+        
+        already_running = dispatcher.service_running(Mysql.DAEMON)
         if already_running:
-            Dispatcher.stop_service(Mysql.DAEMON)
+            dispatcher.stop_service(Mysql.DAEMON)
 
-        server = subprocess.Popen(['mysqld_safe', '--skip-grant-tables'])
-        client = subprocess.Popen(['mysql', 'mysql', '-u', 'root', '-e', 'update user set password=PASSWORD("") where user="root"; flush privileges;'])
+        server = subprocess.Popen([Mysql.MYSQLDSAFE_CMD, '--skip-grant-tables'])
+        client = subprocess.Popen([Mysql.MYSQL_CMD, '-u', 'root', '-e', 'update user set password=PASSWORD("' + mysql_password + '") where user="root"; flush privileges;'])
         client.kill()
         server.kill()
 
         if already_running:
-            Dispatcher.start_service(Mysql.DAEMON)
-    clear_root_pass=staticmethod(clear_root_pass)
+            dispatcher.start_service(Mysql.DAEMON)
+    set_root_pass = staticmethod(set_root_pass)
 
     def is_available(self):
         '''return true if we're on a linux system and the init script is available'''
-        return snap.osregistry.OS.is_linux() and os.path.isfile("/etc/init.d/" + Mysql.DAEMON)
-
-    def is_available(self):
-        '''return true if we're on a linux system and the init script is available'''
-        return snap.osregistry.OS.is_linux() and os.path.isfile("/etc/init.d/" + Mysql.DAEMON)
+        return os.path.isdir(Mysql.DATADIR)
 
     def install_prereqs(self):
-        popen = subprocess.Popen(Mysql.PREREQ_INSTALL_COMMAND.split())
-        popen.wait()
+        if OS.is_linux():
+            popen = subprocess.Popen(Mysql.PREREQ_INSTALL_COMMAND.split())
+            popen.wait()
+        # !!!FIXME!!! it is possible to install mysql in an automated / 
+        # non-interactive method on windows, implement this!!!
 
     def backup(self, basedir):
-        null=open('/dev/null', 'w')
+        dispatcher = Dispatcher.os_dispatcher()
+        null = open(OSUtils.null_file(), 'w')
 
-        if snap.osregistry.OS.apt_based():
-            Mysql.clear_root_pass()
+        if OS.is_linux():
+            Mysql.set_root_pass()
+
+        mysql_password = snap.config.options.service_options['mysql_password']
 
         # check to see if service is running
-        already_running = Dispatcher.service_running(Mysql.DAEMON) 
+        already_running = dispatcher.service_running(Mysql.DAEMON) 
 
         # start the mysql server
-        Dispatcher.start_service(Mysql.DAEMON)
+        dispatcher.start_service(Mysql.DAEMON)
 
         # use a pipe to invoke mysqldump and capture output
         outfile = file(basedir + "/dump.mysql", "w")
-        popen = subprocess.Popen(["mysqldump", "--all-databases"], stdout=outfile, stderr=null)
+        popen = subprocess.Popen([Mysql.MYSQLDUMP_CMD, "-u", "root", "-p" + mysql_password, "--all-databases"],
+                                 stdout=outfile, stderr=null)
         popen.wait()
 
         # if mysql was stopped b4hand, start up again
         if not already_running:
-            Dispatcher.stop_service(Mysql.DAEMON)
+            dispatcher.stop_service(Mysql.DAEMON)
 
     def restore(self, basedir):
-        null=open('/dev/null', 'w')
+        dispatcher = Dispatcher.os_dispatcher()
+        null = open(OSUtils.null_file(), 'w')
 
-        if snap.osregistry.OS.apt_based():
-            Mysql.clear_root_pass()
+        if OS.is_linux():
+            Mysql.set_root_pass()
 
+        mysql_password = snap.config.options.service_options['mysql_password']
+        
         # start the mysql server
-        Dispatcher.start_service(Mysql.DAEMON)
+        dispatcher.start_service(Mysql.DAEMON)
 
         # use pipe to invoke mysql, restoring database
         infile = file(basedir + "/dump.mysql", "r")
-        popen = subprocess.Popen("mysql", stdin=infile, stdout=null, stderr=null)
+        popen = subprocess.Popen([Mysql.MYSQL_CMD, "-u", "root", "-p" + mysql_password],
+                                 stdin=infile, stdout=null, stderr=null)
         popen.wait()
 
         # flush privileges incase any roles were restored and whatnot

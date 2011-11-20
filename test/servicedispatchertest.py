@@ -15,48 +15,64 @@
 
 import os
 import re
-import pwd
+import stat
+import errno
 import shutil
 import fnmatch
 import unittest
 import subprocess
 
-import snap
 from snap.filemanager import FileManager
 from snap.metadata.service import ServicesRecordFile
-from snap.backends.services.dispatcher import Dispatcher
+from snap.metadata.sfile import SFile
+from snap.osregistry import OS
+    
+import snap.backends.services.dispatcher
+import snap.backends.services.windowsdispatcher
+import snap.backends.services.linuxdispatcher
 
 import snap.backends.services.adapters.mock
 import snap.backends.services.adapters.iptables
 import snap.backends.services.adapters.postgresql
 import snap.backends.services.adapters.mysql
 import snap.backends.services.adapters.httpd
+import snap.backends.services.adapters.iis
 
 class ServiceDispatcherTest(unittest.TestCase):
     def setUp(self):
-        self.basedir = os.path.join(os.path.dirname(__file__), "data/basedir")
+        self.basedir = os.path.join(os.path.dirname(__file__), "data", "basedir")
         if os.path.isdir(self.basedir):
             shutil.rmtree(self.basedir)
         os.mkdir(self.basedir)
+        
+        if OS.is_windows():
+            self.dispatcher = snap.backends.services.windowsdispatcher.WindowsDispatcher()
+        else:
+            self.dispatcher = snap.backends.services.linuxdispatcher.LinuxDispatcher()
 
     def tearDown(self):
         shutil.rmtree(self.basedir)
 
     def testStartStopRunningService(self):
-        is_running = Dispatcher.service_running(snap.backends.services.adapters.httpd.Httpd.DAEMON)
-        Dispatcher.start_service(snap.backends.services.adapters.httpd.Httpd.DAEMON)
-        self.assertTrue(Dispatcher.service_running(snap.backends.services.adapters.httpd.Httpd.DAEMON))
-        Dispatcher.stop_service(snap.backends.services.adapters.httpd.Httpd.DAEMON)
-        self.assertFalse(Dispatcher.service_running(snap.backends.services.adapters.httpd.Httpd.DAEMON))
+        if OS.is_windows():
+            service = "WPCsvc" # windows parental controls
+        else:
+            service = snap.backends.services.adapters.httpd.Httpd.DAEMON
+        is_running = self.dispatcher.service_running(service)
+        self.dispatcher.start_service(service)
+        self.assertTrue(self.dispatcher.service_running(service))
+        self.dispatcher.stop_service(service)
+        self.assertFalse(self.dispatcher.service_running(service))
         if is_running:
-            Dispatcher.start_service(snap.backends.services.adapters.httpd.Httpd.DAEMON)
+            self.dispatcher.start_service(service)
 
     def testLoadServices(self):
-        services_path = os.path.join(os.path.dirname(__file__), "../snap/backends/services/adapters")
+        services_path = os.path.join(os.path.dirname(__file__),
+                                     "..", "snap", "backends", "services", "adapters")
         services = os.listdir(services_path)
         service_classes = []
 
-        dispatcher = Dispatcher()
+        dispatcher = snap.backends.services.dispatcher.Dispatcher()
 
         for service in services:
             if service[0:8] != "__init__" and fnmatch.fnmatch(service, "*.py"):
@@ -64,24 +80,24 @@ class ServiceDispatcherTest(unittest.TestCase):
                 service_classes.append(dispatcher.load_service(service).__class__)
 
         # TODO for now just have services tested here statically set, perhaps a better way TODO this?
-        self.assertIn(snap.backends.services.adapters.iptables.Iptables,     service_classes)
+        self.assertIn(snap.backends.services.adapters.iptables.Iptables, service_classes)
         self.assertIn(snap.backends.services.adapters.postgresql.Postgresql, service_classes)
-        self.assertIn(snap.backends.services.adapters.mysql.Mysql,           service_classes)
-        self.assertIn(snap.backends.services.adapters.mock.Mock,             service_classes)
+        self.assertIn(snap.backends.services.adapters.mysql.Mysql, service_classes)
+        self.assertIn(snap.backends.services.adapters.mock.Mock, service_classes)
 
     def testDispatcherBackup(self):
-        snap.backends.services.adapters.mock.Mock.mock_is_available   = True
+        snap.backends.services.adapters.mock.Mock.mock_is_available = True
         snap.backends.services.adapters.mock.Mock.is_available_called = False
-        snap.backends.services.adapters.mock.Mock.backup_called       = False
+        snap.backends.services.adapters.mock.Mock.backup_called = False
 
         dispatcher = snap.backends.services.dispatcher.Dispatcher()
         dispatcher.backup(self.basedir, include=['mock'])
 
         self.assertTrue(snap.backends.services.adapters.mock.Mock.is_available_called)
         self.assertTrue(snap.backends.services.adapters.mock.Mock.backup_called)
-        self.assertTrue(os.path.isfile(self.basedir + "/services.xml"))
+        self.assertTrue(os.path.isfile(os.path.join(self.basedir, "services.xml")))
 
-        record = ServicesRecordFile(self.basedir + "/services.xml")
+        record = ServicesRecordFile(os.path.join(self.basedir, "services.xml"))
         services = record.read()
         service_names = []
         for service in services:
@@ -89,9 +105,9 @@ class ServiceDispatcherTest(unittest.TestCase):
         self.assertIn("mock", service_names)
 
     def testNoBackupIfNotAvailable(self):
-        snap.backends.services.adapters.mock.Mock.mock_is_available   = False
+        snap.backends.services.adapters.mock.Mock.mock_is_available = False
         snap.backends.services.adapters.mock.Mock.is_available_called = False
-        snap.backends.services.adapters.mock.Mock.backup_called       = False
+        snap.backends.services.adapters.mock.Mock.backup_called = False
 
         dispatcher = snap.backends.services.dispatcher.Dispatcher()
         dispatcher.backup(self.basedir, include=['mock'])
@@ -99,27 +115,41 @@ class ServiceDispatcherTest(unittest.TestCase):
         self.assertTrue(snap.backends.services.adapters.mock.Mock.is_available_called)
         self.assertFalse(snap.backends.services.adapters.mock.Mock.backup_called)
 
+    def testOSDispatcher(self):
+        if OS.is_windows():
+            self.assertEqual(snap.backends.services.dispatcher.Dispatcher.os_dispatcher(),
+                             snap.backends.services.windowsdispatcher.WindowsDispatcher)
+        elif OS.is_linux():
+            self.assertEqual(snap.backends.services.dispatcher.Dispatcher.os_dispatcher(),
+                             snap.backends.services.linuxdispatcher.LinuxDispatcher)
+
     def testDispatcherRestore(self):
         # first backup the mock service
         dispatcher = snap.backends.services.dispatcher.Dispatcher()
         dispatcher.backup(self.basedir, include=['mock'])
 
-        snap.backends.services.adapters.mock.Mock.mock_is_available   = False
+        snap.backends.services.adapters.mock.Mock.mock_is_available = True
         snap.backends.services.adapters.mock.Mock.is_available_called = False
         snap.backends.services.adapters.mock.Mock.install_prereqs_called = False
-        snap.backends.services.adapters.mock.Mock.restore_called      = False
+        snap.backends.services.adapters.mock.Mock.restore_called = False
 
         # then restore it
         dispatcher.restore(self.basedir)
         self.assertTrue(snap.backends.services.adapters.mock.Mock.is_available_called)
-        self.assertTrue(snap.backends.services.adapters.mock.Mock.install_prereqs_called)
+        self.assertFalse(snap.backends.services.adapters.mock.Mock.install_prereqs_called)
         self.assertTrue(snap.backends.services.adapters.mock.Mock.restore_called)
-
+        
+        # ensure not restored if prereqs is not avaiable
+        snap.backends.services.adapters.mock.Mock.mock_is_available = False
+        snap.backends.services.adapters.mock.Mock.restore_called = False
+        dispatcher.restore(self.basedir)
+        self.assertFalse(snap.backends.services.adapters.mock.Mock.restore_called)
+        
     def testNoInstallPrereqsIfAvailable(self):
-        snap.backends.services.adapters.mock.Mock.mock_is_available   = True
+        snap.backends.services.adapters.mock.Mock.mock_is_available = True
         snap.backends.services.adapters.mock.Mock.is_available_called = False
         snap.backends.services.adapters.mock.Mock.install_prereqs_called = False
-        snap.backends.services.adapters.mock.Mock.restore_called      = False
+        snap.backends.services.adapters.mock.Mock.restore_called = False
 
         # first backup the mock service
         dispatcher = snap.backends.services.dispatcher.Dispatcher()
@@ -131,203 +161,181 @@ class ServiceDispatcherTest(unittest.TestCase):
         self.assertFalse(snap.backends.services.adapters.mock.Mock.install_prereqs_called)
         self.assertTrue(snap.backends.services.adapters.mock.Mock.restore_called)
 
-    def testSetAndRestorePythonUser(self):
-        real_user = os.geteuid()
-        real_dir  = os.getcwd()
-        stored_user, stored_dir = snap.backends.services.adapters.postgresql.Postgresql.set_postgres_user()
-        self.assertEqual(real_user, stored_user)
-        self.assertEqual(real_dir, stored_dir)
-
-        p_user = os.geteuid()
-        p_dir  = os.getcwd()
-        pg_user = pwd.getpwnam('postgres')
-        self.assertEqual(p_user, pg_user.pw_uid)
-        self.assertEqual(p_dir, pg_user.pw_dir)
-
-        snap.backends.services.adapters.postgresql.Postgresql.restore_user(real_user, real_dir)
-        self.assertEqual(real_user, os.geteuid())
-        self.assertEqual(real_dir, os.getcwd())
-
+    def testSetPostgresEnvPassword(self):
+        self.assertEqual(snap.backends.services.adapters.postgresql.Postgresql.set_pgpassword_env()['PGPASSWORD'],
+                         snap.config.options.service_options['postgresql_password'])
+        
     def testPostgresqlDbExists(self):
-        is_running = Dispatcher.service_running('postgresql')
-        Dispatcher.start_service('postgresql')
+        is_running = self.dispatcher.service_running('postgresql')
+        self.dispatcher.start_service('postgresql')
         self.assertTrue(snap.backends.services.adapters.postgresql.Postgresql.db_exists('postgres'))
         self.assertFalse(snap.backends.services.adapters.postgresql.Postgresql.db_exists('non-existant-db'))
         if not is_running:
-            Dispatcher.stop_service('postgresql')
+            self.dispatcher.stop_service('postgresql')
 
     def testPostgresqlCreateDropDb(self):
-        is_running = Dispatcher.service_running('postgresql')
-        Dispatcher.start_service('postgresql')
+        is_running = self.dispatcher.service_running('postgresql')
+        self.dispatcher.start_service('postgresql')
         snap.backends.services.adapters.postgresql.Postgresql.create_db('test_db')
         self.assertTrue(snap.backends.services.adapters.postgresql.Postgresql.db_exists('test_db'))
         snap.backends.services.adapters.postgresql.Postgresql.drop_db('test_db')
         self.assertFalse(snap.backends.services.adapters.postgresql.Postgresql.db_exists('test_db'))
         if not is_running:
-            Dispatcher.stop_service('postgresql')
+            self.dispatcher.stop_service('postgresql')
 
     def testPostgresqlService(self):
-        # can't use basedir as the postgres user needs access to this
-        pdir = '/tmp/snap-postgres'
-        if not os.path.isdir(pdir):
-            os.mkdir(pdir)
-            os.chmod(pdir, 0777)
-
         # first start the service if it isn't running
-        already_running=Dispatcher.service_running('postgresql')
+        already_running = self.dispatcher.service_running(snap.backends.services.adapters.postgresql.Postgresql.DAEMON)
         if not already_running:
-            Dispatcher.start_service('postgresql')
+            self.dispatcher.start_service(snap.backends.services.adapters.postgresql.Postgresql.DAEMON)
 
         # create a test database
         snap.backends.services.adapters.postgresql.Postgresql.create_db('snaptest')
 
         # restore to original state
         if not already_running:
-            Dispatcher.stop_service('postgresql')
+            self.dispatcher.stop_service(snap.backends.services.adapters.postgresql.Postgresql.DAEMON)
 
         backend = snap.backends.services.adapters.postgresql.Postgresql()
-        backend.backup(pdir)
+        backend.backup(self.basedir)
 
         # ensure the process is in its original state
-        currently_running=Dispatcher.service_running('postgresql')
+        currently_running = self.dispatcher.service_running(snap.backends.services.adapters.postgresql.Postgresql.DAEMON)
         self.assertEqual(already_running, currently_running)
 
         # assert the db dump exists and has the db dump
-        self.assertTrue(os.path.isfile(pdir + "/dump.psql"))
-        c=FileManager.read_file(pdir + "/dump.psql")
+        self.assertTrue(os.path.isfile(self.basedir + "/dump.psql"))
+        c = FileManager.read_file(self.basedir + "/dump.psql")
         self.assertEqual(1, len(re.findall('CREATE DATABASE snaptest', c)))
 
         # finally cleanup
-        Dispatcher.start_service('postgresql')
+        self.dispatcher.start_service(snap.backends.services.adapters.postgresql.Postgresql.DAEMON)
         snap.backends.services.adapters.postgresql.Postgresql.drop_db('snaptest')
 
         # stop the service, backup the datadir
-        Dispatcher.stop_service('postgresql')
-        shutil.copytree(snap.backends.services.adapters.postgresql.Postgresql.DATADIR, 
+        self.dispatcher.stop_service(snap.backends.services.adapters.postgresql.Postgresql.DAEMON)
+        shutil.copytree(snap.backends.services.adapters.postgresql.Postgresql.DATADIR,
                         snap.backends.services.adapters.postgresql.Postgresql.DATADIR + ".bak")
 
+
         # test restore
-        backend.restore(pdir)
+        backend.restore(self.basedir)
 
         # ensure service is running, datadir has been initialized
-        self.assertTrue(Dispatcher.service_running('postgresql'))
+        self.assertTrue(self.dispatcher.service_running(snap.backends.services.adapters.postgresql.Postgresql.DAEMON))
         self.assertTrue(os.path.isdir(snap.backends.services.adapters.postgresql.Postgresql.DATADIR))
 
         # ensure the db exists
         self.assertTrue(snap.backends.services.adapters.postgresql.Postgresql.db_exists('snaptest'))
 
         # stop the service, restore the db
-        Dispatcher.stop_service('postgresql')
+        self.dispatcher.stop_service(snap.backends.services.adapters.postgresql.Postgresql.DAEMON)
         shutil.rmtree(snap.backends.services.adapters.postgresql.Postgresql.DATADIR)
         shutil.move(snap.backends.services.adapters.postgresql.Postgresql.DATADIR + ".bak",
                     snap.backends.services.adapters.postgresql.Postgresql.DATADIR)
+        
         # XXX dirty hack make sure the datadir is owned by postgres
-        data_dir=snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../"
-        if snap.osregistry.OS.apt_based():
-            data_dir += "../"
-        pg_user = pwd.getpwnam('postgres')
-        for root, dirs, files in os.walk(data_dir):
-            for d in dirs:
-                os.chown(os.path.join(root, d), pg_user.pw_uid, pg_user.pw_gid)
-            for f in files:
-                os.chown(os.path.join(root, f), pg_user.pw_uid, pg_user.pw_gid)
-
+        data_dir = None
+        if snap.osregistry.OS.yum_based():
+            data_dir = snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../"
+        elif snap.osregistry.OS.apt_based():
+            data_dir = snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../../"
+        elif snap.osregistry.OS.is_windows():
+            data_dir = snap.backends.services.adapters.postgresql.Postgresql.DATADIR
+        snap.osregistry.OSUtils.chown(data_dir, username='postgres')
+        
         # cleanup, restore to original state
         if already_running:
-            Dispatcher.start_service('postgresql')
+            self.dispatcher.start_service(snap.backends.services.adapters.postgresql.Postgresql.DAEMON)
 
-        shutil.rmtree(pdir)
 
     def testMysqlDbExists(self):
-        is_running = Dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
-        Dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        is_running = self.dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        self.dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         self.assertTrue(snap.backends.services.adapters.mysql.Mysql.db_exists('mysql'))
         self.assertFalse(snap.backends.services.adapters.mysql.Mysql.db_exists('non-existant-db'))
         if not is_running:
-            Dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+            self.dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
 
     def testMysqlCreateDropDb(self):
-        is_running = Dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
-        Dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        is_running = self.dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        self.dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         snap.backends.services.adapters.mysql.Mysql.create_db('snap_test_db')
         self.assertTrue(snap.backends.services.adapters.mysql.Mysql.db_exists('snap_test_db'))
         snap.backends.services.adapters.mysql.Mysql.drop_db('snap_test_db')
         self.assertFalse(snap.backends.services.adapters.mysql.Mysql.db_exists('snap_test_db'))
         if not is_running:
-            Dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+            self.dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
 
     def testMysqlService(self):
-        mdir = '/tmp/snap-mysql'
-        if not os.path.isdir(mdir):
-            os.mkdir(mdir)
-
         # first start the service if it isn't running
-        already_running=Dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        already_running = self.dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         if not already_running:
-            Dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+            self.dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
 
         # create a test database
         snap.backends.services.adapters.mysql.Mysql.create_db('snaptest')
 
         # restore to original state
         if not already_running:
-            Dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+            self.dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
 
         backend = snap.backends.services.adapters.mysql.Mysql()
-        backend.backup(mdir)
+        backend.backup(self.basedir)
 
         # ensure the process is in its original state
-        currently_running=Dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        currently_running = self.dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         self.assertEqual(already_running, currently_running)
 
         # assert the db dump exists and has the db dump
-        self.assertTrue(os.path.isfile(mdir + "/dump.mysql"))
-        c = FileManager.read_file(mdir + "/dump.mysql")
+        self.assertTrue(os.path.isfile(self.basedir + "/dump.mysql"))
+        c = FileManager.read_file(self.basedir + "/dump.mysql")
         self.assertEqual(1, len(re.findall('CREATE DATABASE.*snaptest', c)))
 
         # finally cleanup
-        Dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        self.dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         snap.backends.services.adapters.mysql.Mysql.drop_db('snaptest')
 
         # stop the service, backup the datadir
-        Dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        self.dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         shutil.copytree(snap.backends.services.adapters.mysql.Mysql.DATADIR,
                         snap.backends.services.adapters.mysql.Mysql.DATADIR + ".bak")
 
         # test restore
-        backend.restore(mdir)
+        backend.restore(self.basedir)
 
         # ensure service is running, datadir has been initialized
-        self.assertTrue(Dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON))
+        self.assertTrue(self.dispatcher.service_running(snap.backends.services.adapters.mysql.Mysql.DAEMON))
         self.assertTrue(os.path.isdir(snap.backends.services.adapters.mysql.Mysql.DATADIR))
 
         # ensure the db exists
         self.assertTrue(snap.backends.services.adapters.mysql.Mysql.db_exists('snaptest'))
 
         # stop the service, restore the db
-        Dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+        self.dispatcher.stop_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
         shutil.rmtree(snap.backends.services.adapters.mysql.Mysql.DATADIR)
         shutil.move(snap.backends.services.adapters.mysql.Mysql.DATADIR + ".bak",
                     snap.backends.services.adapters.mysql.Mysql.DATADIR)
-        # XXX dirty hack make sure the datadir is owned by postgres
-        data_dir=snap.backends.services.adapters.mysql.Mysql.DATADIR
-        my_user = pwd.getpwnam('mysql')
-        for root, dirs, files in os.walk(data_dir):
-            os.chown(root, my_user.pw_uid, my_user.pw_gid)
-            for d in dirs:
-                os.chown(os.path.join(root, d), my_user.pw_uid, my_user.pw_gid)
-            for f in files:
-                os.chown(os.path.join(root, f), my_user.pw_uid, my_user.pw_gid)
+        
+        # XXX dirty hack make sure the datadir is owned by mysql
+        data_dir = None
+        if snap.osregistry.OS.yum_based():
+            data_dir = snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../"
+        elif snap.osregistry.OS.apt_based():
+            data_dir = snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../../"
+        elif snap.osregistry.OS.is_windows():
+            data_dir = snap.backends.services.adapters.postgresql.Postgresql.DATADIR
+        snap.osregistry.OSUtils.chown(data_dir, username='mysql')
 
         # cleanup, restore to original state
         if already_running:
-            Dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
+            self.dispatcher.start_service(snap.backends.services.adapters.mysql.Mysql.DAEMON)
 
-        shutil.rmtree(mdir)
 
-    def testIptablesService(self):
+    @unittest.skipIf(OS.is_windows(), "windows doesn't support iptables")
+    def testIptablesService(self):        
         # manually backup iptalbes to restore after the test
-        f=file(self.basedir + "/iptables-backup", 'w')
+        f = file(self.basedir + "/iptables-backup", 'w')
         popen = subprocess.Popen("iptables-save", stdout=f)
         popen.wait()
         self.assertEqual(0, popen.returncode)
@@ -360,12 +368,12 @@ class ServiceDispatcherTest(unittest.TestCase):
         backend.restore(self.basedir)
 
         # assert that we have registered port 22
-        f=file(self.basedir + "/iptables-running", 'w')
+        f = file(self.basedir + "/iptables-running", 'w')
         popen = subprocess.Popen(["iptables", "-nvL"], stdout=f)
         popen.wait()
         self.assertEqual(0, popen.returncode)
         c = re.sub("\s+", " ", FileManager.read_file(self.basedir + "/iptables-running"))
-        self.assertEqual(1, 
+        self.assertEqual(1,
           len(re.findall("ACCEPT.*tcp dpt:22", c))) # TODO prolly could be a better regex
           
 
@@ -379,32 +387,34 @@ class ServiceDispatcherTest(unittest.TestCase):
 
     def testHttpdService(self):
         # backup the http conf directory and document roots
-        test_backup_dir = self.basedir + "/snap-http-test/"
+        test_backup_dir = os.path.join(self.basedir, "snap-http-test")
         if os.path.isdir(test_backup_dir):
             shutil.rmtree(test_backup_dir)
-        shutil.copytree(snap.backends.services.adapters.httpd.Httpd.CONF_D, test_backup_dir + "conf_d")
-        shutil.copytree(snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT, test_backup_dir + "doc_root")
+        shutil.copytree(snap.backends.services.adapters.httpd.Httpd.CONF_D,
+                        os.path.join(test_backup_dir, "conf_d"))
+        shutil.copytree(snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT,
+                        os.path.join(test_backup_dir, "doc_root"))
 
         # run the backup
-        test_base_dir = self.basedir + "/snap-http-basedir/"
+        test_base_dir = os.path.join(self.basedir, "snap-http-basedir")
         backend = snap.backends.services.adapters.httpd.Httpd()
         backend.backup(test_base_dir)
 
         # ensure conf.d and document root were backed up
         bfiles = []
-        for root,dirs,files in os.walk(snap.backends.services.adapters.httpd.Httpd.CONF_D):
+        for root, dirs, files in os.walk(snap.backends.services.adapters.httpd.Httpd.CONF_D):
             for hfile in files:
-                rfile = root + "/" + hfile
-                ffile = test_base_dir + rfile
+                rfile = os.path.join(root, hfile)
+                ffile = os.path.join(test_base_dir, rfile)
                 self.assertTrue(os.path.isfile(ffile))
-                bfiles.append(root + "/" + hfile)
-        for root,dirs,files in os.walk(snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT):
+                bfiles.append(os.path.join(root, hfile))
+        for root, dirs, files in os.walk(snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT):
             for hfile in files:
-                rfile = root + "/" + hfile
-                ffile = test_base_dir + rfile
+                rfile = os.path.join(root, hfile)
+                ffile = os.path.join(test_base_dir, rfile)
                 self.assertTrue(os.path.isfile(ffile))
-                bfiles.append(root + "/" + hfile)
-        self.assertTrue(os.path.isfile(test_base_dir + "service-http.xml"))
+                bfiles.append(os.path.join(root, hfile))
+        self.assertTrue(os.path.isfile(os.path.join(test_base_dir, "service-http.xml")))
 
         # run the restore
         shutil.rmtree(snap.backends.services.adapters.httpd.Httpd.CONF_D)
@@ -416,11 +426,69 @@ class ServiceDispatcherTest(unittest.TestCase):
             self.assertTrue(os.path.isfile(hfile))
 
         # ensure the service is running
-        self.assertTrue(Dispatcher.service_running(snap.backends.services.adapters.httpd.Httpd.DAEMON))
+        self.assertTrue(self.dispatcher.service_running(snap.backends.services.adapters.httpd.Httpd.DAEMON))
 
         # restore backup
         shutil.rmtree(snap.backends.services.adapters.httpd.Httpd.CONF_D)
         shutil.rmtree(snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT)
-        shutil.copytree(test_backup_dir + "conf_d",   snap.backends.services.adapters.httpd.Httpd.CONF_D)
-        shutil.copytree(test_backup_dir + "doc_root", snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT)
+        shutil.copytree(os.path.join(test_backup_dir, "conf_d"),
+                        snap.backends.services.adapters.httpd.Httpd.CONF_D)
+        shutil.copytree(os.path.join(test_backup_dir, "doc_root"),
+                        snap.backends.services.adapters.httpd.Httpd.DOCUMENT_ROOT)
+        shutil.rmtree(test_backup_dir)
+
+    @unittest.skipUnless(OS.is_windows(), "only windows support IIS")
+    def testIisService(self):
+        # backup the iis conf directory and document roots
+        test_backup_dir = os.path.join(self.basedir, "snap-iis-test")
+        if os.path.isdir(test_backup_dir):
+            shutil.rmtree(test_backup_dir)
+        shutil.copytree(snap.backends.services.adapters.iis.Iis.CONFIG_ROOT,
+                        os.path.join(test_backup_dir, "conf"))
+
+        # run the backup
+        test_base_dir = os.path.join(self.basedir, "snap-iis-basedir")
+        backend = snap.backends.services.adapters.iis.Iis()
+        backend.backup(test_base_dir)
+
+        # ensure conf.d and document root were backed up
+        bfiles = []
+        for root, dirs, files in os.walk(snap.backends.services.adapters.iis.Iis.CONFIG_ROOT):
+            for hfile in files:
+                rfile = os.path.join(root, hfile)
+                ffile = os.path.join(test_base_dir, rfile)
+                self.assertTrue(os.path.isfile(ffile))
+                bfiles.append(os.path.join(root, hfile))
+        self.assertTrue(os.path.isfile(os.path.join(test_base_dir, "service-iis.xml")))
+
+        # run the restore
+        shutil.rmtree(snap.backends.services.adapters.iis.Iis.CONFIG_ROOT, ignore_errors=True)
+        backend.restore(test_base_dir)
+
+        # ensure the files backed up were restored
+        for hfile in bfiles:
+            self.assertTrue(os.path.isfile(hfile))
+
+        # ensure the features are enabled
+        self.assertTrue(snap.backends.services.windowsdispatcher.WindowsDispatcher.is_feature_enabled(snap.backends.services.adapters.iis.Iis.WEBSERVER_FEATURE))
+
+        # restore backup
+        shutil.rmtree(snap.backends.services.adapters.iis.Iis.CONFIG_ROOT, ignore_errors=True)
+        for root, dirs, files in os.walk(os.path.join(test_backup_dir, "conf")):
+            for idir  in dirs:
+                fdir = os.path.join(snap.backends.services.adapters.iis.Iis.CONFIG_ROOT, idir)
+                if not os.path.isdir(fdir):
+                    os.makedirs(fdir)
+            for ifile in files:
+                sfile = os.path.join(root, ifile)
+                
+                ffile = os.path.join(snap.backends.services.adapters.iis.Iis.CONFIG_ROOT, ifile)
+                if not os.path.isfile(ffile):
+                    shutil.copy(os.path.join(root, ifile), ffile)
+                os.chmod(sfile, stat.S_IWRITE)
+                os.remove(sfile)
+        for bfile in bfiles:
+            fbfile = os.path.join(test_base_dir, SFile.windows_path_escape(bfile))
+            os.chmod(fbfile, stat.S_IWRITE)
+            os.remove(fbfile)
         shutil.rmtree(test_backup_dir)

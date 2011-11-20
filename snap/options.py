@@ -1,16 +1,18 @@
-SNAP_VERSION='0.5'
-
-# default location which to write snapshots
-#  (timestamp and 'tgz' extension will be appended)
-DEFAULT_SNAPFILE='/tmp/snap-shot.tgz'
+SNAP_VERSION = '0.5'
 
 # locations which to load snap! configuration from
-CONFIG_FILES=['/etc/snap.conf', '~/.snap']
+CONFIG_FILES = ['/etc/snap.conf', '~/.snap', 'C:\\snap\\snap.conf']
 
 # a mapping of targets to default backends
 # on a per-os basis
 DEFAULT_BACKENDS = {
   'mock'    : { 'repos'    : 'mock',
+                'packages' : 'mock',
+                'files'    : 'mock',
+                'services' : 'mock' },
+                    
+  'mock_windows' :
+              { 'repos'    : 'mock',
                 'packages' : 'mock',
                 'files'    : 'mock',
                 'services' : 'mock' },
@@ -43,6 +45,9 @@ DEFAULT_BACKENDS = {
 
   'gentoo'  : {},
   'apple'   : {},
-  'windows' : {}
+  'windows' : {  'repos'    : 'disabled',
+                 'packages' : 'win',
+                 'files'    : 'win',
+                 'services' : 'windowsdispatcher'  }
 
 }

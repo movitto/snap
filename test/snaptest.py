@@ -16,6 +16,7 @@
 import os
 import types
 import unittest
+import tempfile
 
 import snap
 from snap.exceptions import InsufficientPermissionError
@@ -25,7 +26,10 @@ class SnapBaseTest(unittest.TestCase):
         self.snapbase = snap.SnapBase()
 
         self.orig_os = snap.osregistry.OS.current_os
-        snap.osregistry.OS.current_os = 'mock'
+        if snap.osregistry.OS.is_windows:
+            snap.osregistry.OS.current_os = 'mock_windows'
+        else:
+            snap.osregistry.OS.current_os = 'mock'
 
         self.orig_target_backends = snap.config.options.target_backends
         snap.config.options.target_backends = {'repos'    : True,
@@ -34,14 +38,19 @@ class SnapBaseTest(unittest.TestCase):
                                                'services' : True }
 
         self.orig_snapfile = snap.config.options.snapfile
-        snap.config.options.snapfile += "-snap-test.tgz"
+        self.tfile = os.path.join(tempfile.gettempdir(), "snap-test.tgz")
+        snap.config.options.snapfile = self.tfile
 
     def tearDown(self):
         snap.osregistry.OS.current_os = self.orig_os
-        snap.config.target_backends  = self.orig_target_backends
+        snap.config.target_backends = self.orig_target_backends
         snap.config.options.snapfile = self.orig_snapfile
 
     def testInsufficientPermssions(self):
+        # skip until there is an easy way to change the current user w/ windows
+        if snap.osregistry.OS.is_windows():
+            return
+       
         restoreeuid = False
         if os.geteuid() == 0:
             restoreeuid = True
@@ -66,9 +75,9 @@ class SnapBaseTest(unittest.TestCase):
         self.assertEqual('mock', snap.config.options.target_backends['files'])
         self.assertEqual('mock', snap.config.options.target_backends['services'])
 
-        self.assertIn(snap.backends.repos.mock.Mock,    backend_classes)
+        self.assertIn(snap.backends.repos.mock.Mock, backend_classes)
         self.assertIn(snap.backends.packages.mock.Mock, backend_classes)
-        self.assertIn(snap.backends.files.mock.Mock,    backend_classes)
+        self.assertIn(snap.backends.files.mock.Mock, backend_classes)
         self.assertIn(snap.backends.services.mock.Mock, backend_classes)
 
 

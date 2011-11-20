@@ -14,13 +14,28 @@
 # GNU General Public License for more details.
 
 import os
+import re
 import shutil
 import xml, xml.sax, xml.sax.handler, xml.sax.saxutils
 
+import snap.osregistry
 from snap.filemanager import FileManager
 
 class SFile(object):
     """A generic file tracked by snap"""
+
+    def windows_path_escape(path):
+        '''helper to handle drive specifications in windows paths'''
+        # XXX total dirty hack
+        m = re.search("^([^:]*):\\\\(.*)", path)
+        if m:
+            return m.group(1) + "___" + m.group(2)
+        else:
+            m = re.search("^([^_]*)___(.*)", path)
+            if m:
+                return m.group(1) + ":\\" + m.group(2)
+        return path
+    windows_path_escape = staticmethod(windows_path_escape)
 
     def __init__(self, path=''):
         '''initialize the generic file
@@ -30,35 +45,43 @@ class SFile(object):
 
         self.path = path
 
-        path_components = path.split('/')
-        self.name = path_components[len(path_components)-1]
+        self.directory, self.name = os.path.split(self.path)
 
-        path_components.pop()
-        self.directory = '/'.join(path_components)
-
-    def copy_to(self, basedir, path_prefix=''):
+    def copy_to(self, basedir='', path_prefix=''):
         '''copy the sfile to the specified base directory, replicating the directory structure
            of the path under it
            
            @param basedir - the directory to replicate the path and copy the file to
            @param path_prefix - an optional prefix to prepend to the sfile path'''
-        if not os.path.isdir(basedir + self.directory):
-            os.makedirs(basedir + self.directory)
-            shutil.copystat(path_prefix + self.directory, basedir + self.directory)
-            ofs = os.stat(path_prefix + self.directory)
-            os.chown(basedir + self.directory, ofs.st_uid, ofs.st_gid)
+        source_path = os.path.join(path_prefix, self.path)
+        source_dir = os.path.join(path_prefix, self.directory)
+        
+        # XXX need to incorporate a bit of a hack to handle the
+        #  drive specification in windows paths
+        if snap.osregistry.OS.is_windows():
+            self.path = SFile.windows_path_escape(self.path)
 
-        if os.path.islink(path_prefix + self.path):
-            if os.path.isfile(basedir + self.path):
-                os.remove(basedir + self.path)
-            realpath = os.path.realpath(path_prefix + self.path)
-            os.symlink(realpath, basedir + self.path)
+        dest_path = os.path.join(basedir, self.path)
+        dest_dir, dest_name = os.path.split(self.path)
+        dest_dir = os.path.join(basedir, dest_dir)
 
-        elif os.path.isfile(path_prefix + self.path):
-            shutil.copyfile(path_prefix + self.path, basedir + self.path)
-            shutil.copystat(path_prefix + self.path, basedir + self.path)
-            ofs = os.stat(path_prefix + self.path)
-            os.chown(basedir + self.path, ofs.st_uid, ofs.st_gid)
+        if not os.path.isdir(dest_dir):
+            os.makedirs(dest_dir)
+            shutil.copystat(source_dir, dest_dir)
+            ofs = os.stat(source_dir)
+            snap.osregistry.OSUtils.chown(dest_dir, uid=ofs.st_uid, gid=ofs.st_gid)
+
+        if os.path.islink(source_path):
+            if os.path.isfile(dest_path):
+                os.remove(dest_path)
+            realpath = os.path.realpath(source_path)
+            os.symlink(realpath, dest_path)
+
+        elif os.path.isfile(source_path):
+            shutil.copyfile(source_path, dest_path)
+            shutil.copystat(source_path, dest_path)
+            ofs = os.stat(source_path)
+            snap.osregistry.OSUtils.chown(dest_path, uid=ofs.st_uid, gid=ofs.st_gid)
 
 class FilesRecordFile:
     '''a snap files record file, contains list of files modified, to restore'''
@@ -71,7 +94,7 @@ class FilesRecordFile:
 
        @param files - the list of SFiles to record
        '''
-       f=open(self.recordfile, 'w') 
+       f = open(self.recordfile, 'w') 
        f.write('<files>')
        for sfile in sfiles:
            f.write('<file>' + xml.sax.saxutils.escape(sfile.path) + '</file>')
@@ -95,15 +118,15 @@ class _FilesRecordFileParser(xml.sax.handler.ContentHandler):
         self.files = []
 
         # current data being processed
-        self.current_path=None
+        self.current_path = None
 
         # if we are currently evaluating a file
-        self.in_file_content=False
+        self.in_file_content = False
 
     def startElement(self, name, attrs):
         if name == 'file':
             self.current_path = ''
-            self.in_file_content=True
+            self.in_file_content = True
 
     def characters(self, ch):
         if self.in_file_content:
