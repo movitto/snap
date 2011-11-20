@@ -45,7 +45,7 @@ class Syum(snap.snapshottarget.SnapshotTarget):
 
         # then restore individual repos
         for yum_repo in FileManager.get_all_files(include_dirs=[basedir + "/etc/yum.repos.d"]):
-            partial_path = yum_repo.replace(basedir, "")
+            partial_path = yum_repo.replace(basedir + "/" , "")
             SFile(partial_path).copy_to(self.fs_root, path_prefix=basedir)
 
         # update the system

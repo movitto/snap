@@ -320,11 +320,11 @@ class ServiceDispatcherTest(unittest.TestCase):
         # XXX dirty hack make sure the datadir is owned by mysql
         data_dir = None
         if snap.osregistry.OS.yum_based():
-            data_dir = snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../"
+            data_dir = snap.backends.services.adapters.mysql.Mysql.DATADIR
         elif snap.osregistry.OS.apt_based():
-            data_dir = snap.backends.services.adapters.postgresql.Postgresql.DATADIR + "/../../"
+            data_dir = snap.backends.services.adapters.mysql.Mysql.DATADIR
         elif snap.osregistry.OS.is_windows():
-            data_dir = snap.backends.services.adapters.postgresql.Postgresql.DATADIR
+            data_dir = snap.backends.services.adapters.mysql.Mysql.DATADIR
         snap.osregistry.OSUtils.chown(data_dir, username='mysql')
 
         # cleanup, restore to original state

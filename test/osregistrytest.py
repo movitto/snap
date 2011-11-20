@@ -145,7 +145,9 @@ class OsRegistryTest(unittest.TestCase):
         self.assertEqual(100, st.st_gid)
         
         import pwd
-        uid, gid = pwd.getpwname("nobody")
+        pwo = pwd.getpwnam("nobody")
+        uid = pwo.pw_uid
+        gid = pwo.pw_gid
         OSUtils.chown(self.basedir, username="nobody")
         st = os.stat(self.basedir)
         self.assertEqual(uid, st.st_uid)

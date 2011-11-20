@@ -37,6 +37,15 @@ class SFile(object):
         return path
     windows_path_escape = staticmethod(windows_path_escape)
 
+    def linux_path_escape(basedir, path):
+        '''helper to convert path to partial path in linux'''
+        if path[0] == '/' and basedir != '':
+          return path[1:]
+        elif path[0] != '/' and basedir == '':
+          return '/' + path
+        return path
+    linux_path_escape = staticmethod(linux_path_escape)
+
     def __init__(self, path=''):
         '''initialize the generic file
 
@@ -57,13 +66,14 @@ class SFile(object):
         source_dir = os.path.join(path_prefix, self.directory)
         
         # XXX need to incorporate a bit of a hack to handle the
-        #  drive specification in windows paths
+        #  drive specification in windows paths and partial paths on linux
         if snap.osregistry.OS.is_windows():
             self.path = SFile.windows_path_escape(self.path)
+        elif snap.osregistry.OS.is_linux():
+            self.path = SFile.linux_path_escape(basedir, self.path)
 
         dest_path = os.path.join(basedir, self.path)
-        dest_dir, dest_name = os.path.split(self.path)
-        dest_dir = os.path.join(basedir, dest_dir)
+        dest_dir, dest_name = os.path.split(dest_path)
 
         if not os.path.isdir(dest_dir):
             os.makedirs(dest_dir)

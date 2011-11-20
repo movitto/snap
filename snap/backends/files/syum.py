@@ -98,4 +98,4 @@ class Syum(snap.snapshottarget.SnapshotTarget):
         for sfile in sfiles:
             if snap.config.options.log_level_at_least('verbose'):
                 snap.callback.snapcallback.message("Restoring file " + sfile.path);
-            sfile.copy_to(self.fs_root, basedir)
+            sfile.copy_to(basedir=self.fs_root, path_prefix=basedir)

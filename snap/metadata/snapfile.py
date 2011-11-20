@@ -22,7 +22,7 @@ from snap.filemanager import FileManager
 from snap.exceptions  import MissingDirError
 
 # skip snapshot encyrption support on windows for the time being
-if not snap.osregistry.OS.is_windows:
+if not snap.osregistry.OS.is_windows():
     from snap.crypto      import Crypto
 
 class SnapFile:

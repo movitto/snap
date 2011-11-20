@@ -108,6 +108,9 @@ class SFileMetadataTest(unittest.TestCase):
 
         os.makedirs(self.dest_dir)
 
+        if os.path.islink(self.source):
+            os.remove(self.source)
+
         os.symlink("/foobar", self.source)
         sfile = SFile(self.source)
         sfile.copy_to(self.dest_dir)

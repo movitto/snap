@@ -26,7 +26,7 @@ class SnapBaseTest(unittest.TestCase):
         self.snapbase = snap.SnapBase()
 
         self.orig_os = snap.osregistry.OS.current_os
-        if snap.osregistry.OS.is_windows:
+        if snap.osregistry.OS.is_windows():
             snap.osregistry.OS.current_os = 'mock_windows'
         else:
             snap.osregistry.OS.current_os = 'mock'

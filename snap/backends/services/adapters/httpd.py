@@ -90,6 +90,10 @@ class Httpd:
         # restore those to their original locations
         for sfile in sfiles:
             sfile.copy_to(path_prefix=basedir)
+        
+        # ensure the web root exists even if empty
+        if OS.is_linux() and not os.path.isdir(os.path.join(Httpd.DOCUMENT_ROOT, "html")):
+            os.mkdir(os.path.join(Httpd.DOCUMENT_ROOT, "html"))
 
         # start the httpd service
         dispatcher.start_service(Httpd.DAEMON)
