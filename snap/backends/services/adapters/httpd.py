@@ -43,11 +43,16 @@ class Httpd:
         DAEMON = 'Apache2.2'
         CONF_D = "C:\\Program Files (x86)\\Apache Software Foundation\\Apache2.2\\conf"
         DOCUMENT_ROOT = "C:\\Program Files (x86)\\Apache Software Foundation\\Apache2.2\\htdocs"
-        
+    
+    else:
+        DAEMON = None
+        CONF_D = None
+        DOCUMENT_ROOT = None
 
     def is_available(self):
         '''return true if we're on a linux system and the init script is available'''
-        return os.path.isdir(Httpd.CONF_D) and os.path.isdir(Httpd.DOCUMENT_ROOT)
+        return (Httpd.CONF_D and os.path.isdir(Httpd.CONF_D) and 
+                Httpd.DOCUMENT_ROOT and os.path.isdir(Httpd.DOCUMENT_ROOT))
 
     def install_prereqs(self):
         if OS.is_linux():
@@ -90,10 +95,11 @@ class Httpd:
         # restore those to their original locations
         for sfile in sfiles:
             sfile.copy_to(path_prefix=basedir)
-        
+
         # ensure the web root exists even if empty
         if OS.is_linux() and not os.path.isdir(os.path.join(Httpd.DOCUMENT_ROOT, "html")):
             os.mkdir(os.path.join(Httpd.DOCUMENT_ROOT, "html"))
+
 
         # start the httpd service
         dispatcher.start_service(Httpd.DAEMON)

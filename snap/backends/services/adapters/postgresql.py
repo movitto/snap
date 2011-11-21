@@ -113,7 +113,7 @@ class Postgresql:
     drop_db = staticmethod(drop_db)
 
     def set_root_pass():
-        '''helper to clear the postgresql root password'''
+        '''helper to clear the mysql root password'''
         # !!!FIXME!!! implement, can be accomplished by su'ing to the postgres user on linux
     set_root_pass = staticmethod(set_root_pass)
 
@@ -133,7 +133,7 @@ class Postgresql:
 
     def is_available(self):
         '''return true postgres is available locally'''
-        return os.path.isdir(Postgresql.DATADIR)
+        return Postgresql.DATADIR and os.path.isdir(Postgresql.DATADIR)
 
     def install_prereqs(self):
         if OS.is_linux():

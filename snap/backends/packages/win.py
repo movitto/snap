@@ -49,7 +49,7 @@ class Win(snap.snapshottarget.SnapshotTarget):
     get_packages = staticmethod(get_packages)
 
     def __init__(self):
-        self.fs_root = ''
+        pass
 
     def backup(self, basedir, include=[], exclude=[]):
         '''backup the packages installed locally'''
@@ -86,4 +86,9 @@ class Win(snap.snapshottarget.SnapshotTarget):
 
         # restore program files
         for pkg_file in FileManager.get_all_files(include_dirs=[os.path.join(basedir, "windows-packages")]):
-            SFile(pkg_file).copy_to(self.fs_root)
+            partial_path = pkg_file.replace(os.path.join(basedir, "windows-packages") + "\\", "")
+            try:
+                SFile(partial_path).copy_to(path_prefix=os.path.join(basedir, "windows-packages"))
+            except:
+                if snap.config.options.log_level_at_least('normal'):
+                    snap.callback.snapcallback.message("Failed to restore windows package file " + partial_path);

@@ -193,7 +193,7 @@ class Config:
     # read values from the config files and set them in the target ConfigOptions
     def read_config(self):
         # add conf stored in resources if running from local checkout 
-        self.fs_root = os.path.join(os.path.dirname(__file__), "..", "resources", "snap.conf")
+        CONFIG_FILES.append(os.path.join(os.path.dirname(__file__), "..", "resources", "snap.conf"))
         for config_file in CONFIG_FILES:
           ConfigFile(config_file)
 

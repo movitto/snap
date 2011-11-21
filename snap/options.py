@@ -1,7 +1,8 @@
 SNAP_VERSION = '0.5'
 
 # locations which to load snap! configuration from
-CONFIG_FILES = ['/etc/snap.conf', '~/.snap', 'C:\\snap\\snap.conf']
+CONFIG_FILES = ['/etc/snap.conf', '~/.snap',
+                'C:\\Program Files\\snap\\snap.conf', 'C:\\Program Files (x86)\\snap\\snap.conf']
 
 # a mapping of targets to default backends
 # on a per-os basis
@@ -48,6 +49,6 @@ DEFAULT_BACKENDS = {
   'windows' : {  'repos'    : 'disabled',
                  'packages' : 'win',
                  'files'    : 'win',
-                 'services' : 'windowsdispatcher'  }
+                 'services' : 'dispatcher'  }
 
 }

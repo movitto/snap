@@ -106,23 +106,26 @@ class FileManager:
         files = []
         # iterate over each directory in the include list
         for directory in include_dirs:
-            for name in os.listdir(directory):
-                fullpath = os.path.join(directory, name)
-                # add all files in the directory
-                if os.path.isfile(fullpath) and not fullpath in files:
-                    files.append(fullpath)
-
-            # iterate over all subdirectories
-            subdirs = FileManager.get_all_subdirectories(directory)
-            for subdirectory in subdirs:
-                fullpath = os.path.join(directory, subdirectory)
-                # exclude those in the exclude list
-                if not fullpath in exclude_dirs:
-                    subdir_files = FileManager.get_all_files([fullpath], exclude_dirs)
-                    # add all files in the subdirectory
-                    for subdir_file in subdir_files:
-                        if not subdir_file in files:
-                            files.append(subdir_file)
+            try:
+                for name in os.listdir(directory):
+                    fullpath = os.path.join(directory, name)
+                    # add all files in the directory
+                    if os.path.isfile(fullpath) and not fullpath in files:
+                        files.append(fullpath)
+    
+                # iterate over all subdirectories
+                subdirs = FileManager.get_all_subdirectories(directory)
+                for subdirectory in subdirs:
+                    fullpath = os.path.join(directory, subdirectory)
+                    # exclude those in the exclude list
+                    if not fullpath in exclude_dirs:
+                        subdir_files = FileManager.get_all_files([fullpath], exclude_dirs)
+                        # add all files in the subdirectory
+                        for subdir_file in subdir_files:
+                            if not subdir_file in files:
+                                files.append(subdir_file)
+            except:
+                pass # silently ignore errors
         return files
     get_all_files = staticmethod(get_all_files)
 

@@ -46,7 +46,7 @@ class Mysql:
         # hack until we re-introduce package system abstraction:
         PREREQ_INSTALL_COMMAND = 'apt-get install -y mysql-server mysql-client'
 
-    elif snap.osregistry.OS.is_windows():
+    elif snap.osregistry.OS.is_windows() and os.path.isdir('C:\\Program Files\\MySQL'):
         VERSION = os.listdir('C:\\Program Files\\MySQL')[0].replace("MySQL Server ", "")
         DATADIR = "C:\\Program Files\\MySQL\\MySQL Server " + VERSION + "\\data"
         MYSQL_CMD = "C:\\Program Files\\MySQL\\MySQL Server " + VERSION + "\\bin\mysql.exe"
@@ -139,7 +139,7 @@ class Mysql:
 
     def is_available(self):
         '''return true if we're on a linux system and the init script is available'''
-        return os.path.isdir(Mysql.DATADIR)
+        return Mysql.DATADIR and os.path.isdir(Mysql.DATADIR)
 
     def install_prereqs(self):
         if OS.is_linux():

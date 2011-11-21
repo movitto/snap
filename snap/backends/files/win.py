@@ -40,6 +40,7 @@ class Win(snap.snapshottarget.SnapshotTarget):
 
         # get list of hard drives
         if len(include) == 0:
+            drives = []
             null = open(OSUtils.null_file(), "w")
             tfile = tempfile.TemporaryFile()
             popen = subprocess.Popen(["fsutil", "fsinfo", "drives"], stdout=tfile, stderr=null)
@@ -47,7 +48,22 @@ class Win(snap.snapshottarget.SnapshotTarget):
             tfile.seek(0)
             c = tfile.read()
             
-            include = c.split()[1:]
+            drives = c.split()[1:]
+       
+            # loop through each drive and determine which are available
+            for drive in drives:
+                include_drive = True
+                try:
+                    os.listdir(drive)
+                except WindowsError, e:
+                    include_drive = False
+                if include_drive:
+                    include.append(drive)
+
+        # else apply path manipulation to specified includes
+        else:
+            for i in range(len(include)):
+                include[i] = SFile.windows_path_escape(include[i])
 
         for additional_exclude in Win.EXCLUDE_DIRS:
             if not additional_exclude in exclude:
@@ -64,9 +80,12 @@ class Win(snap.snapshottarget.SnapshotTarget):
         for tfile in files:
             if snap.config.options.log_level_at_least('verbose'):
                 snap.callback.snapcallback.message("Backing up file " + tfile);
-            sfile = SFile(tfile)
-            sfile.copy_to(basedir)
-            sfiles.append(sfile)
+            try:
+                sfile = SFile(tfile)
+                sfile.copy_to(basedir)
+                sfiles.append(sfile)
+            except:
+                pass
 
         # write record file to basedir
         record = FilesRecordFile(os.path.join(basedir, "files.xml"))
@@ -90,4 +109,9 @@ class Win(snap.snapshottarget.SnapshotTarget):
         for sfile in sfiles:
             if snap.config.options.log_level_at_least('verbose'):
                 snap.callback.snapcallback.message("Restoring file " + sfile.path);
-            sfile.copy_to(self.fs_root, basedir)
+            try:
+                sfile.copy_to(self.fs_root, basedir)
+            except:
+                if snap.config.options.log_level_at_least('normal'):
+                    snap.callback.snapcallback.message("Failed to restore file " + sfile.path);
+            
