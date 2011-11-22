@@ -40,8 +40,9 @@
  If running from a source checkout, be sure to set 'PYTHONPATH' before
  invoking snap, eg
 
-   export PYTHONPATH='.'
-   ./bin/snaptool --help
+   git clone git://github.com/movitto/snap
+   cd snap
+   sudo PYTHONPATH='.' ./bin/snaptool --help
 
 
  When invoking the command line tools pass in the snapshot targets which you
