@@ -150,9 +150,9 @@ class AptBackendTest(unittest.TestCase):
         for sfile in files:
             file_names.append(sfile.path)
         self.assertEqual(1, len(files))
-        self.assertIn(self.fs_root + "/subdir1/foo", file_names)
-        self.assertNotIn(self.fs_root + "/subdir2/bar", file_names)
-        self.assertNotIn(self.fs_root + "/subdir1/subsubdir/bar", file_names)
+        self.assertIn(self.fs_root[1:] + "/subdir1/foo", file_names)
+        self.assertNotIn(self.fs_root[1:] + "/subdir2/bar", file_names)
+        self.assertNotIn(self.fs_root[1:] + "/subdir1/subsubdir/bar", file_names)
 
     def testRestoreFiles(self):
         f=open(self.fs_root + "/foo" , 'w')
