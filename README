@@ -17,11 +17,13 @@
  Both RPM and DEB packages are provided for Fedora, Ubuntu, Suse, and other
  systems which use those package formats.
  
-   - In install rom a source checkout / tarball simply run 'make install'
+   - In install from a source checkout / tarball simply run 'make install'
        
    - To install on Fedora, simply run 'yum install snap' (coming soon!)
+       - https://bugzilla.redhat.com/show_bug.cgi?id=755890
 
-   - To install on Ubuntu, simple run 'apt-get install snap' (coming soon!)
+   - To install on Debian/Ubuntu, simple run 'apt-get install snap' (coming soon!)
+       - http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=649585
 
 
 [Running]
