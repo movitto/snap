@@ -28,7 +28,7 @@ Section "Installer Section" inst_sec
   File "dist\\library.zip"
   File "dist\\python27.dll"
   File "dist\\snaptool.exe"
-  File "dist\\snap.conf"
+  File "resources\\snap.conf"
   
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Snap" \
                  "DisplayName" "Snap System Snapshotter"
