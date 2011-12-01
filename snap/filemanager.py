@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # High level file manager / helper
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

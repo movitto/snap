@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Methods to dispatch service backup/restore operations to specific handlers
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

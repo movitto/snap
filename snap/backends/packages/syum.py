@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Methods to backup/restore packages using yum, implementing snap.SnapshotTarget.
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

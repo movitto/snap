@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Defines a snapshot target, or an abstract entity of
 #  which a snapshot can be made of / restored
 #

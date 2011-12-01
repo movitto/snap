@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Snap
+GenericName=Snap! System Snapshotter
+Comment=Take and restore system snapshots using native tooling
+Exec=gsnap
+Icon=gsnap
+Terminal=false
+Type=Application
+Categories=System

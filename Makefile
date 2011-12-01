@@ -12,11 +12,11 @@ doc:
 	cd docs/api/ ; $(PYDOC) -w ../../
 
 man:
-	PYTHONPATH=$(PYTHONPATH) $(HELP2MAN) -N -o docs/man1/snap.man bin/snaptool
+	PYTHONPATH=$(PYTHONPATH) $(HELP2MAN) -N -o docs/man1/snap.1 bin/snaptool
 
 install:
 	$(PYTHON) setup.py install --root=$(DESTDIR)
-	cp docs/man1/snap.man $(DESTDIR)/usr/share/man/man1/
+	cp docs/man1/snap.1 $(DESTDIR)/usr/share/man/man1/
 
 clean:
 	rm -rfv build

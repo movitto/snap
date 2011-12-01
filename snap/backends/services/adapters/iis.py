@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # IIS service backup/restoration adapter for windows
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

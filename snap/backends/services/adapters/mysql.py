@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Mysql service backup/restoration adapter
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

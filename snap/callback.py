@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # base interface for snap callback system
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

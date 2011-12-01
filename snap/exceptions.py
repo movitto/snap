@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # exceptions which snap will raise
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

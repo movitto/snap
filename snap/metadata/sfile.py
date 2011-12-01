@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Metadata pertaining to files backed up / restored by Snap!
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

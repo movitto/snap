@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Metadata pertaining to snapfile, the tarball thats the overall result
 #  of the backup operation which gets fed into the restore operation
 #

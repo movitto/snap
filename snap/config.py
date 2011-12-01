@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Snap! Configuration Manager
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

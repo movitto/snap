@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # High level OS helpers
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

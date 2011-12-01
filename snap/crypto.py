@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Routines to assist in the encyrption / decryption of snapshots
 #
 # (C) Copyright 2011 Mo Morsi (mo@morsi.org)

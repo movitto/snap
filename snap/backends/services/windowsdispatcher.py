@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Methods to dispatch service backup/restore operations to specific handlers
 #   on windows systems
 #
