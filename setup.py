@@ -18,9 +18,9 @@ from distutils.core import setup
 
 backends = []
 for root, dirs, files in os.walk("snap/backends"):
-  module = root.replace('/', '.')
-  for d in dirs:
-    backends.append(module + "." + d)
+    module = root.replace('/', '.')
+    for d in dirs:
+        backends.append(module + "." + d)
 
 # build targets depending on which platform we are running on
 data_files = []

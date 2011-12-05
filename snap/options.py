@@ -7,48 +7,48 @@ CONFIG_FILES = ['/etc/snap.conf', '~/.snap',
 # a mapping of targets to default backends
 # on a per-os basis
 DEFAULT_BACKENDS = {
-  'mock'    : { 'repos'    : 'mock',
-                'packages' : 'mock',
-                'files'    : 'mock',
-                'services' : 'mock' },
-                    
-  'mock_windows' :
-              { 'repos'    : 'mock',
-                'packages' : 'mock',
-                'files'    : 'mock',
-                'services' : 'mock' },
+    'mock'    : { 'repos'    : 'mock',
+                  'packages' : 'mock',
+                  'files'    : 'mock',
+                  'services' : 'mock' },
 
-  'fedora'  : { 'repos'    : 'syum',
-                'packages' : 'syum',
-                'files'    : 'syum',
-                'services' : 'dispatcher' },
+    'mock_windows' :
+                { 'repos'    : 'mock',
+                  'packages' : 'mock',
+                  'files'    : 'mock',
+                  'services' : 'mock' },
 
-  'rhel'  :   { 'repos'    : 'syum',
-                'packages' : 'syum',
-                'files'    : 'syum',
-                'services' : 'dispatcher' },
+    'fedora'  : { 'repos'    : 'syum',
+                  'packages' : 'syum',
+                  'files'    : 'syum',
+                  'services' : 'dispatcher' },
 
-  'centos'  : { 'repos'    : 'syum',
-                'packages' : 'syum',
-                'files'    : 'syum',
-                'services' : 'dispatcher' },
+    'rhel'  :   { 'repos'    : 'syum',
+                  'packages' : 'syum',
+                  'files'    : 'syum',
+                  'services' : 'dispatcher' },
 
-  'ubuntu'  : { 'repos'    : 'sapt',
-                'packages' : 'sapt',
-                'files'    : 'sapt',
-                'services' : 'dispatcher' },
+    'centos'  : { 'repos'    : 'syum',
+                  'packages' : 'syum',
+                  'files'    : 'syum',
+                  'services' : 'dispatcher' },
 
-  'debian ' : { 'repos'    : 'sapt',
-                'packages' : 'sapt',
-                'files'    : 'sapt',
-                'services' : 'dispatcher' },
+    'ubuntu'  : { 'repos'    : 'sapt',
+                  'packages' : 'sapt',
+                  'files'    : 'sapt',
+                  'services' : 'dispatcher' },
+
+    'debian ' : { 'repos'    : 'sapt',
+                  'packages' : 'sapt',
+                  'files'    : 'sapt',
+                  'services' : 'dispatcher' },
 
 
-  'gentoo'  : {},
-  'apple'   : {},
-  'windows' : {  'repos'    : 'disabled',
-                 'packages' : 'win',
-                 'files'    : 'win',
-                 'services' : 'dispatcher'  }
+    'gentoo'  : {},
+    'apple'   : {},
+    'windows' : {  'repos'    : 'disabled',
+                   'packages' : 'win',
+                   'files'    : 'win',
+                   'services' : 'dispatcher'  }
 
 }
