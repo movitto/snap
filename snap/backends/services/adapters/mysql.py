@@ -13,12 +13,12 @@
 
 import os
 import re
-import tempfile
 import subprocess
 
 import snap
 from snap.osregistry import OS, OSUtils
 from snap.backends.services.dispatcher import Dispatcher
+from snap.filemanager import FileManager
 
 class Mysql:
 
@@ -63,19 +63,12 @@ class Mysql:
 
     def db_exists(dbname):
         '''helper to return boolean indicating if the db w/ the specified name exists'''
-        null = open(OSUtils.null_file(), 'w')
-
         mysql_password = snap.config.options.service_options['mysql_password']
 
         # retrieve list of db names from mysql
-        t = tempfile.TemporaryFile()
-        popen = subprocess.Popen([Mysql.MYSQL_CMD, "-e", "show databases", "-u", "root", "-p" + mysql_password],
-                                 stdout=t, stderr=null)
-        popen.wait()
+        c = FileManager.capture_output([Mysql.MYSQL_CMD, "-e", "show databases", "-u", "root", "-p" + mysql_password])
 
         # determine if the specified one is among them
-        t.seek(0)
-        c = t.read()
         has_db = len(re.findall(dbname, c))
 
         return has_db

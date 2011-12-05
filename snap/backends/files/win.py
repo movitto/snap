@@ -13,8 +13,6 @@
 
 import os
 import re
-import tempfile
-import subprocess
 
 import snap
 from snap.osregistry import OSUtils
@@ -39,13 +37,7 @@ class Win(snap.snapshottarget.SnapshotTarget):
         # get list of hard drives
         if len(include) == 0:
             drives = []
-            null = open(OSUtils.null_file(), "w")
-            tfile = tempfile.TemporaryFile()
-            popen = subprocess.Popen(["fsutil", "fsinfo", "drives"], stdout=tfile, stderr=null)
-            popen.wait()
-            tfile.seek(0)
-            c = tfile.read()
-            
+            c = FileManager.capture_output(["fsutil", "fsinfo", "drives"])
             drives = c.split()[1:]
        
             # loop through each drive and determine which are available

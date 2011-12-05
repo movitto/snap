@@ -78,6 +78,9 @@ class FileManagerTest(unittest.TestCase):
         FileManager.rm(temp_file_path)
         self.assertEqual("foobar", c)
 
+    def testCaptureOutput(self):
+        out = FileManager.capture_output(['echo', 'yo'])
+        self.assertEqual("yo\n", out)
 
     def testGetAllFiles(self):
         data_path = os.path.join(os.path.dirname(__file__), "data", "tmp")

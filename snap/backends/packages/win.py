@@ -13,7 +13,6 @@
 
 import re
 import os
-import tempfile
 import subprocess
 
 import snap
@@ -27,15 +26,7 @@ class Win(snap.snapshottarget.SnapshotTarget):
 
     def get_packages():
         # retrieve list of installed software
-        null = open(OSUtils.null_file(), "w")
-        tfile = tempfile.TemporaryFile()
-        popen = subprocess.Popen(["reg", "query", "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", "/s"],
-                                 stdout=tfile, stderr=null)
-        popen.wait()
-
-        tfile.seek(0)
-        c = tfile.read()
-        tfile.close()
+        c = FileManager.capture_output(["reg", "query", "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", "/s"])
 
         # parse install locations out of this
         packages = []

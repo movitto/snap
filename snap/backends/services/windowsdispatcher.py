@@ -14,7 +14,6 @@
 
 import re
 import time
-import tempfile
 import subprocess
 
 from snap.osregistry import OSUtils
@@ -72,13 +71,8 @@ class WindowsDispatcher(Dispatcher):
         @param matching_pattern - pattern to match features against'''
         out = open(OSUtils.null_file(), 'w')
         features = []
-        tfile = tempfile.TemporaryFile()
-        popen = subprocess.Popen(["dism", "/online", "/Get-features"],
-                                 stdout=tfile, stderr=out)
-        popen.wait()
+        c = FileManager.capture_output(["dism", "/online", "/Get-features"])
         
-        tfile.seek(0)
-        c = tfile.read()
         for f in re.findall(matching_pattern, c):
             features.append(f)
         return features
@@ -87,12 +81,7 @@ class WindowsDispatcher(Dispatcher):
     def is_feature_enabled(feature):
         '''helper to return true/false pertaining to whether or not feature is enabled'''
         out = open(OSUtils.null_file(), 'w')
-        tfile = tempfile.TemporaryFile()
-        popen = subprocess.Popen(['dism', '/online', '/Get-FeatureInfo', '/featurename:' + feature],
-                                 stdout=tfile, stderr=out)
-        popen.wait()
-        tfile.seek(0)
-        c = tfile.read()
+        c = FileManager.capture_output(['dism', '/online', '/Get-FeatureInfo', '/featurename:' + feature])
         m = re.search('State\s*:\s*([^\s]*)\s*', c)
         return m != None and m.group(1) == "Enabled"
     is_feature_enabled = staticmethod(is_feature_enabled)
