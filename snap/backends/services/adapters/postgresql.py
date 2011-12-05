@@ -111,7 +111,7 @@ class Postgresql:
     drop_db = staticmethod(drop_db)
 
     def set_root_pass():
-        '''helper to clear the mysql root password'''
+        '''helper to set the postgresql root password'''
         # !!!FIXME!!! implement, can be accomplished by su'ing to the postgres user on linux
     set_root_pass = staticmethod(set_root_pass)
 
