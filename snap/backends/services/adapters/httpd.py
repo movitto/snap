@@ -94,9 +94,13 @@ class Httpd:
         for sfile in sfiles:
             sfile.copy_to(path_prefix=basedir)
 
-        # ensure the web root exists even if empty
+        # ensure the various subdirs exists even if empty
         if OS.is_linux() and not os.path.isdir(os.path.join(Httpd.DOCUMENT_ROOT, "html")):
             os.mkdir(os.path.join(Httpd.DOCUMENT_ROOT, "html"))
+        if OS.is_linux() and not os.path.isdir(os.path.join(Httpd.CONF_D, "logs")):
+            os.mkdir(os.path.join(Httpd.CONF_D, "logs"))
+        if OS.is_linux() and not os.path.isdir(os.path.join(Httpd.CONF_D, "run")):
+            os.mkdir(os.path.join(Httpd.CONF_D, "run"))
 
 
         # start the httpd service
