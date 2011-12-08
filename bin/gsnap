@@ -119,7 +119,7 @@ class BackupOperationWindow:
        # https://bugzilla.gnome.org/show_bug.cgi?id=662837
        self.snapbase = snap.SnapBase()
        snapfile_id = time.strftime('%m.%d.%Y-%H.%M.%S')
-       snapfile = snap.options.DEFAULT_SNAPFILE + "-" + snapfile_id + ".tgz"
+       snapfile = "/tmp/snapfile-" + snapfile_id + ".tgz"
        file(snapfile, "w")
        self.builder.get_object("backup_snapfile").set_filename(snapfile)
 
