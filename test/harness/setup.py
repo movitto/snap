@@ -197,7 +197,7 @@ for img_name in IMAGES.keys():
     ip_address = create_vm(img_name)
 
     # update the vm
-    update_vm(img_name)
+    update_vm(ip_address, img_name)
 
     # run tests
     run_tests(ip_address, img_name)
@@ -205,7 +205,7 @@ for img_name in IMAGES.keys():
     # destroy / recreate the instance
     destroy_vm(img_name)
     ip_address = create_vm(img_name)
-    update_vm(img_name)
+    update_vm(ip_address, img_name)
 
     # take the snapshot
     take_snapshot(ip_address, img_name)
