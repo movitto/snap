@@ -4,7 +4,7 @@
 
 Name:         snap
 Version:      0.5
-Release:      4%{?dist}
+Release:      6%{?dist}
 Summary:      A modular system backup/restore utility
 
 Group:       Applications/System
@@ -35,7 +35,11 @@ Group:   Applications/System
 License: GPLv3
 Requires: %{name} = %{version}-%{release}
 Requires: pygtk2
+%if 0%{?with_python3}
 Requires: pygobject3
+%else
+Requires: pygobject2
+%endif
 
 %description gtk
 Provides gsnap a GTK frontend to the Snap! system snapshotter
@@ -51,12 +55,16 @@ make %{?_smp_mflags}
 #%%{__python} test/run.py
 
 %install
-mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1 $RPM_BUILD_ROOT%{_iconsscaldir} $RPM_BUILD_ROOT%{_icons48dir}
+mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1 \
+         $RPM_BUILD_ROOT%{_iconsscaldir} \
+         $RPM_BUILD_ROOT%{_icons48dir}
 make install DESTDIR=$RPM_BUILD_ROOT
 desktop-file-install --dir=$RPM_BUILD_ROOT%{_datadir}/applications resources/snap.desktop
 cp resources/gsnap.svg    $RPM_BUILD_ROOT/%{_iconsscaldir}/gsnap.svg
 cp resources/gsnap-48.png $RPM_BUILD_ROOT/%{_icons48dir}/gsnap.png
-ln -s %{_mandir}/man1/snap.1.gz $RPM_BUILD_ROOT/%{_mandir}/man1/snaptool.1.gz
+
+pushd $RPM_BUILD_ROOT/%{_mandir}/man1
+ln -s snap.1.gz snaptool.1.gz
 
 %files
 %{python_sitelib}/snap/
@@ -66,6 +74,7 @@ ln -s %{_mandir}/man1/snap.1.gz $RPM_BUILD_ROOT/%{_mandir}/man1/snaptool.1.gz
 %{_mandir}/man1/snap.1.gz
 %{_mandir}/man1/snaptool.1.gz
 %{python_sitelib}/snap*.egg-info
+%doc CHANGELOG LICENSE README
 
 %files gtk
 %{_bindir}/gsnap
@@ -74,6 +83,16 @@ ln -s %{_mandir}/man1/snap.1.gz $RPM_BUILD_ROOT/%{_mandir}/man1/snaptool.1.gz
 %{_icons48dir}/gsnap.png
 
 %changelog
+* Thu Dec 08 2011 Mo Morsi <mo@morsi.org> 0.5-6
+- more updates to conform to fedora guidelines
+- include docs in files section
+
+* Wed Dec 07 2011 Mo Morsi <mo@morsi.org> 0.5-5
+- more updates to conform to fedora guidelines
+- source0 now matches upstream release
+- fix long lines, shorted symbollic links,
+  conditionalize pygobject2/3 dependency
+
 * Tue Nov 22 2011 Mo Morsi <mo@morsi.org> 0.5-4
 - add missing pyobject3 dependency
 - added 48x48 icon and icon macros for F16+
