@@ -1,0 +1,51 @@
+[Overview]
+Developers can extend snap by defining new snapshot targets, or abstract
+entities which snapshots can be taken of / restored, and backends implementing
+those targets. 
+
+Examples of targets and specific backends
+
+  -repos: yum and apt-get
+
+  -packages: rpm, deb, installed windows software
+
+  -files: the files modified outside the package system
+          (in the case of windows, the files not owned
+           by the operating system)
+
+  -services: postgresql, mysql, iptables, apache httpd, iis
+
+[Targets]
+To create a new snapshot target, register it with the list in
+snap/snapshottarget.py and add a corresponding directory to snap/backends/
+(containing an empty __init__.py)
+
+
+[Backends]
+In the target directory a backend will need to be written for every os-dependent
+implementation of the operations needed to backup/restore that snapshot target
+
+Furthermore configure which backend will be used by default on a per os basis
+by modifying DEFAULT_BACKENDS in snap/options.py
+
+Each backend will need to implement the following methods:
+
+  -backup(self, basedir, include=[], exclude=[])
+   performs the actual backup operation, taking in the following params:
+     -self: the instance of the backend class
+     -basedir: the directory to write any files containing the backup records
+     -include: list of specific entities to backup, an empty list should be
+               assumed to mean to run the default / all-encompassing backup
+     -exclude: list of specific entities to exclude when backing up
+
+
+  -restore(self, basedir)
+   performs the actual restoration operation
+     -self: the instance of the backend class
+     -basedir: the directory to read files containing the backup records
+
+From there you are done, snap will automatically pickup the target and
+any backends, and present those to the user via the command line tool.
+
+Any configuration options set in /etc/snap.conf will be automatically picked up
+and made available to your backend via the global 'snap.config.options' dictionary

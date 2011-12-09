@@ -1,43 +1,54 @@
 [About]
- Snap is a utility to take and restore system snapshots using the native system
- tooling. The end user can accomplish this by using the 'snaptool' command, the
- command line utility to take and restore snapshot files (called snapfiles) as
- well as the 'gsnap' tool which is the graphical user interface to snap!
+ Snap is a utility to take and restore system snapshots on Linux, Windows, and Mac
+ 
+ The end user can accomplish this by using the 'snaptool' command, the command line
+ utility to take and restore snapshot files as well as the 'gsnap' tool which is the
+ graphical user interface to Snap.
 
- Developers can extend snap by defining new snapshot targets, or abstract
- entities which snapshots can be taken of / restored, and backends to those
- targets. Currently targets exist for package repos, packages, files, and various
- system services.
+ Snap will use the native system tooling to take snapshots of package repositories,
+ the installed packages, files modified outside of the package system (only those files
+ so as to keep snapshots lightweight and portable), and the services running on the system.
 
- Written by and copyright (C) of Mohammed Morsi (mo@morsi.org) 2007-2011
- Licensed under the GPLv3
+ Snap also permits converting Snapshots between alternative systems. Thus for example
+ it is possible to take a snapshot of a Ubuntu Linux system and convert it to a Fedora
+ snapshot or take a snapshot of a Windows system and convert it to a snapshot to restore
+ on a Mac.
 
 
 [Installing]
- Both RPM and DEB packages are provided for Fedora, Ubuntu, Suse, and other
- systems which use those package formats.
+ Both RPM and DEB packages are provided for systems which use those package formats.
+ Additionally Windows and Mac installers are provided.
  
    - In install from a source checkout / tarball simply run 'make install'
        
-   - To install on Fedora, simply run 'yum install snap' (coming soon!)
+   - To install on Fedora/RHEL/etc, simply run 'yum install snap' (coming soon!)
        - https://bugzilla.redhat.com/show_bug.cgi?id=755890
 
-   - To install on Debian/Ubuntu, simple run 'apt-get install snap' (coming soon!)
+   - To install on Debian/Ubuntu/etc, simple run 'apt-get install snap' (coming soon!)
        - http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=649585
 
 
-[Running]
- 'man snap' for 'snaptool --help' for all available options
+[Running from the Command Line]
+ Run 'snaptool --help' for all available command line options
 
  To take a snapshot:
-   snaptool --backup --log-level=verbose --repos --packages \
-            --files=/home:/etc:!/etc/shadow
+   snaptool --backup --log-level=verbose --snapfile /tmp/snapfile.tgz \
+            --repos --packages --files=/home:/etc:!/etc/shadow
+
+ --backup    instructs snap to run in backup mode
+ --log-level instructs snap to output verbose log messages
+ --snapfile  instructs snap to write the resulting snapshot to /tmp/snapfile.tgz
+ --repos     instructs snap to take a snapshot of the package repositories
+ --packages  instructs snap to take a snapshot of the packages installed locally
+ --files     instructs snap to take a snapshot of the specified files,
+             specifically those under /home, /etc, but not the /etc/shadow file
 
  To restore a snapshot:
    snaptool --restore --snapfile /tmp/snap-12.06.2007-23.57.54.tgz
 
- To launch graphical user interface:
-   gsnap
+ --restore   instructs snap to in snapshot restoration mode
+ --log-level instructs snap to output verbose log messages
+ --snapfile  specifies the location of the snapfile to restore
 
  If running from a source checkout, be sure to set 'PYTHONPATH' before
  invoking snap, eg
@@ -46,33 +57,47 @@
    cd snap
    sudo PYTHONPATH='.' ./bin/snaptool --help
 
-
  When invoking the command line tools pass in the snapshot targets which you
- would like to backup. Additionally you may exlclude targets as well by passing
- in the targets prefixed with 'no'. To restrict the list of target entities
- which get backed up, pass that as a parameter list into the target's command
- line flag.
+ would like to backup. 
+ 
+ Additionally you may exclude targets by passing them in prefixed with 'no'. 
+ For example to backup repositories but not packages, specify
 
- For example, to disable repo / package snapshots and restrict the files which
- are backed up to those in the /home directory (excluding "jsmith's" home), you
- would run:
+   --repos --nopackages
+ 
+ To restrict specific entities which get backed up (specific files for example)
+ pass that as a colon-seperated parameter list into the target's command line flag.
+ Specify specific entities to exclude by prefixing those in the list with a '!'.
+ For example, to backup the files in the /home directory, excluding jsmith's home,
+ specify:
+   
+   --files=/home:!/home/jsmith
 
-   snaptool --backup --norepos --nopackages --files=/home:!/home/jsmith
+
+[Running the Graphical Interface]
+ To launch graphical user interface:
+   gsnap
+
+ You may click on the 'help' button for help w/ the graphical utility
 
 
- By default the snapshot will be written to /tmp/snap-[current_timestamp].tgz
- unless overriden with the --snapfile flag (must specify --snapfile when
- restoring snapshots)
+[Configuring]
+ You may set configuration options for snap by modifying /etc/snap.conf
+
+ Default values are provided there with regard to the default targets to
+ backup / restore and the default parameters to use during Snap operations
+ (for example the default postgresql/mysql root password, various default
+  service directories, etc)
 
 
 [Extending]
-  To create a new snapshot target, register it with the list in
-  snap/snapshottarget.py and add a corresponding directory to snap/backends/
-  (containing an empty __init__.py)
+ Developers can extend snap by defining new snapshot targets, or abstract
+ entities which snapshots can be taken of / restored, and backends implementing
+ those targets. 
+  
+ See the EXTENDING document for more info on how to extend Snap
 
-  In that directory a backend will need to be written for every os-dependent
-  implementation of the operations needed to backup/restore that snapshot target
 
-  Furthermore configure which backend will be used by default on a per os basis
-  by modifying DEFAULT_BACKENDS in snap/options.py
-
+[Legal]
+ Snap is written by and copyright (C) of Mohammed Morsi (mo@morsi.org) 2007-2011
+ Licensed under the GPLv3
