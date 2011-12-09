@@ -1,5 +1,5 @@
 [Overview]
-Developers can extend snap by defining new snapshot targets, or abstract
+Developers can extend Snap by defining new snapshot targets, or abstract
 entities which snapshots can be taken of / restored, and backends implementing
 those targets. 
 
@@ -32,16 +32,16 @@ Each backend will need to implement the following methods:
 
   -backup(self, basedir, include=[], exclude=[])
    performs the actual backup operation, taking in the following params:
-     -self: the instance of the backend class
+     -self: an instance of the backend class
      -basedir: the directory to write any files containing the backup records
+                (eg the actual data and any metadata files)
      -include: list of specific entities to backup, an empty list should be
                assumed to mean to run the default / all-encompassing backup
      -exclude: list of specific entities to exclude when backing up
 
-
   -restore(self, basedir)
    performs the actual restoration operation
-     -self: the instance of the backend class
+     -self: an instance of the backend class
      -basedir: the directory to read files containing the backup records
 
 From there you are done, snap will automatically pickup the target and

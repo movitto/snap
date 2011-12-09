@@ -2,17 +2,15 @@
  Snap is a utility to take and restore system snapshots on Linux, Windows, and Mac
  
  The end user can accomplish this by using the 'snaptool' command, the command line
- utility to take and restore snapshot files as well as the 'gsnap' tool which is the
- graphical user interface to Snap.
-
+ utility, as well as the 'gsnap' tool, the graphical user interface.
+ 
  Snap will use the native system tooling to take snapshots of package repositories,
- the installed packages, files modified outside of the package system (only those files
+ installed packages, files modified outside of the package system (only those files
  so as to keep snapshots lightweight and portable), and the services running on the system.
 
  Snap also permits converting Snapshots between alternative systems. Thus for example
  it is possible to take a snapshot of a Ubuntu Linux system and convert it to a Fedora
- snapshot or take a snapshot of a Windows system and convert it to a snapshot to restore
- on a Mac.
+ snapshot or take a snapshot of a Windows system and convert it to a Mac snapshot.
 
 
 [Installing]
@@ -27,6 +25,11 @@
    - To install on Debian/Ubuntu/etc, simple run 'apt-get install snap' (coming soon!)
        - http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=649585
 
+   - Windows Vista / Win7 Installer:
+       - http://mo.morsi.org/files/snap/snap-installer.exe
+
+   - WinXP / MacOSX installers (coming soon!)
+
 
 [Running from the Command Line]
  Run 'snaptool --help' for all available command line options
@@ -35,54 +38,54 @@
    snaptool --backup --log-level=verbose --snapfile /tmp/snapfile.tgz \
             --repos --packages --files=/home:/etc:!/etc/shadow
 
- --backup    instructs snap to run in backup mode
- --log-level instructs snap to output verbose log messages
- --snapfile  instructs snap to write the resulting snapshot to /tmp/snapfile.tgz
- --repos     instructs snap to take a snapshot of the package repositories
- --packages  instructs snap to take a snapshot of the packages installed locally
- --files     instructs snap to take a snapshot of the specified files,
-             specifically those under /home, /etc, but not the /etc/shadow file
+   --backup    instructs snap to run in backup mode
+   --log-level instructs snap to output verbose log messages
+   --snapfile  instructs snap to write the resulting snapshot to /tmp/snapfile.tgz
+   --repos     instructs snap to take a snapshot of the package repositories
+   --packages  instructs snap to take a snapshot of the packages installed locally
+   --files     instructs snap to take a snapshot of the specified files,
+               specifically those under /home, /etc, but not the /etc/shadow file
 
  To restore a snapshot:
    snaptool --restore --snapfile /tmp/snap-12.06.2007-23.57.54.tgz
 
- --restore   instructs snap to in snapshot restoration mode
- --log-level instructs snap to output verbose log messages
- --snapfile  specifies the location of the snapfile to restore
+   --restore   instructs snap to in snapshot restoration mode
+   --log-level instructs snap to output verbose log messages
+   --snapfile  specifies the location of the snapfile to restore
 
  If running from a source checkout, be sure to set 'PYTHONPATH' before
- invoking snap, eg
+ invoking snaptool or gsnap, eg
 
    git clone git://github.com/movitto/snap
    cd snap
    sudo PYTHONPATH='.' ./bin/snaptool --help
 
  When invoking the command line tools pass in the snapshot targets which you
- would like to backup. 
- 
- Additionally you may exclude targets by passing them in prefixed with 'no'. 
- For example to backup repositories but not packages, specify
+ would like to backup. Additionally you may exclude targets by passing them
+ in prefixed with 'no'. For example to backup repositories but not packages,
+ specify:
 
    --repos --nopackages
  
  To restrict specific entities which get backed up (specific files for example)
  pass that as a colon-seperated parameter list into the target's command line flag.
- Specify specific entities to exclude by prefixing those in the list with a '!'.
- For example, to backup the files in the /home directory, excluding jsmith's home,
- specify:
-   
+ Indicate which specific entities you would like to exclude by prefixing those in
+ the list with a '!'. For example, to backup the files in the /home directory,
+ excluding jsmith's home, specify:
+
    --files=/home:!/home/jsmith
 
 
 [Running the Graphical Interface]
- To launch graphical user interface:
+ To launch the graphical user interface:
    gsnap
 
  You may click on the 'help' button for help w/ the graphical utility
 
 
 [Configuring]
- You may set configuration options for snap by modifying /etc/snap.conf
+ You may set configuration options for Snap by modifying /etc/snap.conf
+   (on Windows C:\Program Files\Snap\snap.conf)
 
  Default values are provided there with regard to the default targets to
  backup / restore and the default parameters to use during Snap operations
