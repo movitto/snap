@@ -1,10 +1,14 @@
 # these don't seem to be defined on f16+
+%global _icons16dir    %{_datadir}/icons/hicolor/16x16/apps
+%global _icons22dir    %{_datadir}/icons/hicolor/22x22/apps
+%global _icons24dir    %{_datadir}/icons/hicolor/24x24/apps
+%global _icons32dir    %{_datadir}/icons/hicolor/32x32/apps
 %global _icons48dir    %{_datadir}/icons/hicolor/48x48/apps
 %global _iconsscaldir  %{_datadir}/icons/hicolor/scalable/apps
 
 Name:         snap
 Version:      0.5
-Release:      6%{?dist}
+Release:      8%{?dist}
 Summary:      A modular system backup/restore utility
 
 Group:       Applications/System
@@ -13,10 +17,11 @@ URL:         http://projects.morsi.org/snap
 Source0:     http://mo.morsi.org/files/snap/snap-0.5.tgz
 
 BuildArch:      noarch
-BuildRequires:  python2-devel
 BuildRequires:  desktop-file-utils
 %if 0%{?with_python3}
 BuildRequires:  python3-devel
+%else
+BuildRequires:  python2-devel
 %endif # if with_python3
 Requires:  python-crypto
 
@@ -55,13 +60,23 @@ make %{?_smp_mflags}
 #%%{__python} test/run.py
 
 %install
-mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1 \
+mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1  \
          $RPM_BUILD_ROOT%{_iconsscaldir} \
-         $RPM_BUILD_ROOT%{_icons48dir}
+         $RPM_BUILD_ROOT%{_icons16dir}   \
+         $RPM_BUILD_ROOT%{_icons22dir}   \
+         $RPM_BUILD_ROOT%{_icons24dir}   \
+         $RPM_BUILD_ROOT%{_icons32dir}   \
+         $RPM_BUILD_ROOT%{_icons48dir}   \
+         $RPM_BUILD_ROOT%{_datadir}/pixmaps
 make install DESTDIR=$RPM_BUILD_ROOT
 desktop-file-install --dir=$RPM_BUILD_ROOT%{_datadir}/applications resources/snap.desktop
 cp resources/gsnap.svg    $RPM_BUILD_ROOT/%{_iconsscaldir}/gsnap.svg
+cp resources/gsnap-16.png $RPM_BUILD_ROOT/%{_icons16dir}/gsnap.png
+cp resources/gsnap-22.png $RPM_BUILD_ROOT/%{_icons22dir}/gsnap.png
+cp resources/gsnap-24.png $RPM_BUILD_ROOT/%{_icons24dir}/gsnap.png
+cp resources/gsnap-32.png $RPM_BUILD_ROOT/%{_icons32dir}/gsnap.png
 cp resources/gsnap-48.png $RPM_BUILD_ROOT/%{_icons48dir}/gsnap.png
+cp resources/gsnap-16.png $RPM_BUILD_ROOT/%{_datadir}/pixmaps/gsnap.png
 
 pushd $RPM_BUILD_ROOT/%{_mandir}/man1
 ln -s snap.1.gz snaptool.1.gz
@@ -79,10 +94,24 @@ ln -s snap.1.gz snaptool.1.gz
 %files gtk
 %{_bindir}/gsnap
 %{_datadir}/applications/snap.desktop
+%{_datadir}/pixmaps/gsnap.png
 %{_iconsscaldir}/gsnap.svg
+%{_icons16dir}/gsnap.png
+%{_icons22dir}/gsnap.png
+%{_icons24dir}/gsnap.png
+%{_icons32dir}/gsnap.png
 %{_icons48dir}/gsnap.png
 
 %changelog
+* Sat Dec 10 2011 Mo Morsi <mo@morsi.org> 0.5-8
+- include additional sized icons
+- include pixmap file
+
+* Thu Dec 08 2011 Mo Morsi <mo@morsi.org> 0.5-7
+- more updates to conform to fedora guidelines
+- conditionalize python2/3-devel dependency
+- include upstream fix in release tarball
+
 * Thu Dec 08 2011 Mo Morsi <mo@morsi.org> 0.5-6
 - more updates to conform to fedora guidelines
 - include docs in files section
