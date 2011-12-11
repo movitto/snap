@@ -39,7 +39,7 @@ class Syum(snap.snapshottarget.SnapshotTarget):
             return
 
         # first restore yum configuration
-        SFile("/etc/yum.conf").copy_to(self.fs_root, path_prefix=basedir)
+        SFile("etc/yum.conf").copy_to(self.fs_root, path_prefix=basedir)
 
         # then restore individual repos
         for yum_repo in FileManager.get_all_files(include_dirs=[basedir + "/etc/yum.repos.d"]):
