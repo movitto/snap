@@ -27,24 +27,28 @@ UNDERLYING_OS = sys.argv[1]
 # grab mode of operation from second command line argument
 SNAP_MODE = sys.argv[2]
 
-# source location of snap binaries
-SNAP_INSTALL_LOCATION=None
-if UNDERLYING_OS == 'fedora':
-    SNAP_INSTALL_LOCATION='http://yum.morsi.org/repos/15/'
-elif UNDERLYING_OS == 'ubuntu':
-    SNAP_INSTALL_LOCATION='http://apt.morsi.org/ubuntu/'
-#elif UNDERLYING_OS == 'windows_xp':
-#elif UNDERLYING_OS == 'windows_7':
-
 # helper to run a command and wait for it to complete, returns the command's stdout/stderr
-def run_command(command):
+def run_command(command, env=os.environ, shell=False):
     t = tempfile.TemporaryFile()
-    popen = subprocess.Popen(command, stdout=t, stderr=t)
+    popen = subprocess.Popen(command, stdout=t, stderr=t, env=env, shell=shell)
     popen.wait()
     t.seek(0)
     data = t.read()
     t.close()
     return data
+
+# XXX a hack we need to implement to get postgres working, remove this at some point
+def postgres_hack():
+    if UNDERLYING_OS == 'fedora':
+        run_command(["yum", "install", "-y", "postgresql-server"])
+        run_command(["service", "postgresql", "initdb"])
+        run_command(["sed", "-i", "s/ident/trust/", "/var/lib/pgsql/data/pg_hba.conf"])
+        run_command(['service', 'postgresql', 'start'])
+    elif UNDERLYING_OS == 'ubuntu':
+        run_command(["apt-get", "install", "-y", "postgresql"])
+        run_command(["sed", "-i", "s/md5/trust/", "/etc/postgresql/9.1/main/pg_hba.conf"])
+        run_command(["sed", "-i", "s/peer/trust/", "/etc/postgresql/9.1/main/pg_hba.conf"])
+        run_command(['service', 'postgresql', 'restart'])
 
 
 # helper to install test suite prerequisites
@@ -53,26 +57,58 @@ def setup_tests():
         # install git and test suite prereqs
         run_command(['yum', 'install', '--nogpgcheck', "-y", "git", "postgresql-server", "postgresql", "httpd", "mysql-server", "mysql" ])
     
-        # setup postgres as a test suite prereq
-        run_command(['service', 'postgresql', 'initdb'])
+        # XXX hack allow anyone to connect to postgres
+        postgres_hack()
 
-    elif UNDERLYING_OS == 'fedora':
-        run_command(['apt-get', 'install', "-y", "git", "postgresql", "apache2", "mysql-server", "mysql-client"])
+        # start mysql
+        run_command(["service", "mysqld", "start"])
+
+    elif UNDERLYING_OS == 'ubuntu':
+        env = os.environ
+        env['DEBIAN_FRONTEND']='noninteractive'
+        run_command(['apt-get', 'install', "-y", "git", "postgresql", "apache2", "mysql-server", "mysql-client"], env=env)
+
+        # XXX hack allow anyone to connect to postgres
+        postgres_hack()
+
+        # start mysql
+        run_command(["service", "mysql", "start"])
 
     # setup postgres root password
     #run_command(['su', 'postgres', '-c', '"psql', '-c', '\"alter', 'user', 'postgres', 'with', 'password', "'postgres'" '\""'])
 
-    # XXX hack allow anyone to connect to postgres
-    run_command(["sed", "-i", "s/ident/trust/", "/var/lib/pgsql/data/pg_hba.conf"])
-
-    # restart postgres
-    run_command(["service", "postgresql", "start"])
-
-    # start mysql
-    run_command(["service", "mysqld", "start"])
-
     # setup mysql root password
     run_command(["mysqladmin", "-u", "root", "password", "mysql"])
+
+# helper build the package
+def build_package():
+    # install git
+    if UNDERLYING_OS == 'fedora':
+        run_command(['yum', 'install', '--nogpgcheck', "-y", "git", 'rpm-build', 'python2-devel'])
+
+        if not os.path.isdir(os.path.expanduser("~") + "/rpmbuild/SOURCES"):
+            os.mkdir(os.path.expanduser("~") + "/rpmbuild")
+            os.mkdir(os.path.expanduser("~") + "/rpmbuild/SOURCES")
+
+        if not os.path.isdir("snap"):
+            # clone source
+            run_command(["git", "clone", SNAP_SOURCE_GIT])
+
+        os.chdir("snap")
+        run_command(['make', 'rpm'])
+        os.chdir("..")
+
+    elif UNDERLYING_OS == 'ubuntu':
+        run_command(['apt-get', 'install', "-y", "git", 'build-essential', 'devscripts', 'debhelper', 'cdbs'])
+
+        if not os.path.isdir("snap"):
+            # clone source
+            run_command(["git", "clone", SNAP_SOURCE_GIT])
+
+        os.chdir("snap")
+        run_command(['make', 'deb'])
+        os.chdir("..")
+
 
 # helper to run tests
 def run_tests():
@@ -94,13 +130,12 @@ def create_mock_data():
     if UNDERLYING_OS == 'fedora':
         run_command(['yum', 'install', "-y", "mediawiki", "postgresql-server"])
     elif UNDERLYING_OS == 'ubuntu':
-        run_command(['apt-get', 'install', "-y", "mediawiki", "postgresql"])
+        env = os.environ
+        env['DEBIAN_FRONTEND']='noninteractive'
+        run_command(['apt-get', 'install', "-y", "mediawiki", "postgresql"], env=env)
 
     run_command(['iptables', '-A', 'INPUT', '-p', 'tcp', '--dport', '1234', '-j', 'ACCEPT'])
-    run_command(['service', 'postgresql', 'initdb'])
-    # XXX hack
-    run_command(["sed", "-i", "s/ident/trust/", "/var/lib/pgsql/data/pg_hba.conf"])
-    run_command(['service', 'postgresql', 'start'])
+    postgres_hack()
     run_command(['psql', 'postgres', 'postgres', '-c', 'create database snap_test'])
     run_command(['psql', 'snap_test', 'postgres', '-c', 'create table snap_table (id int, name varchar(50))'])
     run_command(['psql', 'snap_test', 'postgres', '-c', "insert into snap_table values (1, 'mo')"])
@@ -121,10 +156,10 @@ def verify_mock_data():
       output = run_command(['rpm', '-q', 'mediawiki', 'postgresql-server'])
       result = re.search('not installed', output)
     elif UNDERLYING_OS == 'ubuntu':
-      output = run_command(['rpm', '-q', 'mediawiki', 'postgresql-server'])
-      result = re.search('No packages found', output)
+      output = run_command(['dpkg-query', '-s', 'mediawiki', 'postgresql'])
+      result = re.search('not installed', output)
     if result != None:
-        print "ERROR: mediawiki and postgresql-server not found"
+        print "ERROR: mediawiki and postgresql not found"
 
     output = run_command(['iptables', '-nvL'])
     result = re.search('ACCEPT.*tcp dpt:1234', output)
@@ -146,49 +181,43 @@ def verify_mock_data():
 # helper to install snap
 def install_snap():
     if UNDERLYING_OS == 'fedora':
-        # setup repo
-        o = open("/etc/yum.repos.d/snap.repo", "w")
-        o.write("[snap]\nname=snap yum repository\nbaseurl="+SNAP_INSTALL_LOCATION+"\nenabled=1\nskip_if_unavailable=1\ngpgcheck=0")
-        o.close()
-    
         # install snap
-        run_command(['yum', 'install', '--nogpgcheck', "-y", "snap"])
+        run_command('yum install --nogpgcheck -y *.rpm', shell=True)
     
     elif UNDERLYING_OS == 'ubuntu':
-    
-        # setup repo
-        o = open("/etc/apt/sources.list", "a")
-        o.write("deb " + SNAP_INSTALL_LOCATION + " oneiric main\ndeb-src " + SNAP_INSTALL_LOCATION + "oneiric main")
-        o.close()
-    
         # install snap
-        run_command(['apt-get', 'install', "-y", "snap"])
+        run_command('dpkg -i *.deb', shell=True)
     
     #elif UNDERLYING_OS == 'windows_xp':
     
     #elif UNDERLYING_OS == 'windows_7':
 
 # disable selinux
-run_command(['setenforce', '0'])
+if UNDERLYING_OS == "fedora":
+    run_command(['setenforce', '0'])
 
-if SNAP_MODE == 'backup':
+if SNAP_MODE == 'test':
+    # setup test prerequisites
+    setup_tests()
+
+    # checkout the source / run the test suite
+    run_tests()
+
+elif SNAP_MODE == 'build_package':
+    build_package()
+
+elif SNAP_MODE == 'install_package':
+    install_snap()
+
+elif SNAP_MODE == 'backup':
     # setup mock data
     create_mock_data()
-
-    # install snap
-    install_snap()
 
     # run the actual backup
     run_command(['/usr/bin/snaptool', '--backup', '--snapfile', '/tmp/snapfile.tgz', '--repos', '--packages', '--files', '--services'])
 
 elif SNAP_MODE == 'restore':
-    # install snap
-    install_snap()
-
-    # XXX hack to remove postgres permissions
-    run_command(["yum", "install", "-y", "postgresql-server"])
-    run_command(["service", "postgresql", "initdb"])
-    run_command(["sed", "-i", "s/ident/trust/", "/var/lib/pgsql/data/pg_hba.conf"])
+    postgres_hack()
 
     # run the actual restoration
     run_command(['/usr/bin/snaptool', '--restore', '--snapfile', '/tmp/snapfile.tgz'])
@@ -196,9 +225,3 @@ elif SNAP_MODE == 'restore':
     # verify mock data is restored
     verify_mock_data()
 
-elif SNAP_MODE == 'test':
-    # setup test prerequisites
-    setup_tests()
-
-    # checkout the source / run the test suite
-    run_tests()
