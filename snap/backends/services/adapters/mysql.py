@@ -134,7 +134,9 @@ class Mysql:
 
     def install_prereqs(self):
         if OS.is_linux():
-            popen = subprocess.Popen(Mysql.PREREQ_INSTALL_COMMAND.split())
+            env=os.environ
+            env['DEBIAN_FRONTEND']='noninteractive'
+            popen = subprocess.Popen(Mysql.PREREQ_INSTALL_COMMAND.split(), env=env)
             popen.wait()
         # !!!FIXME!!! it is possible to install mysql in an automated / 
         # non-interactive method on windows, implement this!!!

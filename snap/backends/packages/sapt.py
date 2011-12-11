@@ -57,6 +57,10 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
         if snap.config.options.log_level_at_least('verbose'):
             snap.callback.snapcallback.message("Restoring packages using apt backend");
 
+        # set DEBIAN_FRONTEND to noninteractive so that we won't launch
+        # any interactive configurations
+        os.environ['DEBIAN_FRONTEND'] = 'noninteractive'
+
         # first update the system
         self.cache.upgrade()
 
