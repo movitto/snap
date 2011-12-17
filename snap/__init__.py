@@ -102,7 +102,7 @@ class SnapBase:
 
         self.check_permission()
 
-        # temp directory used to construct tarball 
+        # temp directory used to extract tarball
         construct_dir = tempfile.mkdtemp()
         FileManager.make_dir(construct_dir)
 

@@ -19,8 +19,7 @@
  
    - In install from a source checkout / tarball simply run 'make install'
        
-   - To install on Fedora/RHEL/etc, simply run 'yum install snap' (coming soon!)
-       - https://bugzilla.redhat.com/show_bug.cgi?id=755890
+   - To install on Fedora/RHEL/etc, simply run 'yum install snap'
 
    - To install on Debian/Ubuntu/etc, simple run 'apt-get install snap' (coming soon!)
        - http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=649585
