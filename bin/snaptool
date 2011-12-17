@@ -20,13 +20,22 @@ import snap.callback
 
 class ConsoleCallback(snap.callback.Callback):
     def message(self, msg):
-        print msg
+        try:
+            print msg
+        except UnicodeEncodeError, e:
+            pass
 
     def warn(self, warning):
-        print 'WARNING: ' + warning
+        try:
+            print 'WARNING: ' + warning
+        except UnicodeEncodeError, e:
+            pass
 
     def error(self, error):
-        print 'ERROR: ' + error
+        try:
+            print 'ERROR: ' + error
+        except UnicodeEncodeError, e:
+            pass
 
 def main():
     try:
