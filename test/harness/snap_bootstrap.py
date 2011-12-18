@@ -214,13 +214,13 @@ elif SNAP_MODE == 'backup':
     create_mock_data()
 
     # run the actual backup
-    run_command(['/usr/bin/snaptool', '--backup', '--snapfile', '/tmp/snapfile.tgz', '--repos', '--packages', '--files', '--services'])
+    run_command(['/usr/bin/snaptool', '--log-level', 'verbose', '--backup', '--snapfile', '/tmp/snapfile.tgz', '--repos', '--packages', '--files', '--services'])
 
 elif SNAP_MODE == 'restore':
     postgres_hack()
 
     # run the actual restoration
-    run_command(['/usr/bin/snaptool', '--restore', '--snapfile', '/tmp/snapfile.tgz'])
+    run_command(['/usr/bin/snaptool', '--log-level', 'verbose', '--restore', '--snapfile', '/tmp/snapfile.tgz'])
 
     # verify mock data is restored
     verify_mock_data()

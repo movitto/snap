@@ -60,8 +60,23 @@ def run_command(command, env=os.environ):
     t.close()
     return data
 
+# helper to run a command via ssh
+def ssh_command(destination, command, env=os.environ):
+    return run_command(['ssh', "-o", "StrictHostKeyChecking no", "-o", "ServerAliveInterval 60", destination, command], env=env)
+
+# helper to run a command via ssh with timeout
+# XXX hack needed, see below
+def ssh_command_with_timeout(destination, command, timeout="900", env=os.environ):
+    return run_command(['bash', 'timeout3', '-t', timeout, 'ssh', "-o", "StrictHostKeyChecking no", "-o", "ServerAliveInterval 60", destination, command], env=env)
+
+# helper to scp source file to dest
+def scp_command(source, destination):
+    return run_command(['scp', "-o", "StrictHostKeyChecking no", source, destination ])
+
 # helper to create a libvirt instance for the specified os
 def create_vm(os_name):
+    print "Creating " + os_name + "-snap vm"
+
     source_xml_file = os.path.join(CURRENT_DIR, "libvirt.xml")
     dest_xml_file   = os.path.join(LIBVIRT_XML_ROOT, os_name + "-snap.xml")
     image_file      = os.path.join(LIBVIRT_IMAGE_ROOT, os_name + "-snap.img")
@@ -103,24 +118,33 @@ def create_vm(os_name):
 
 # helper to update the vm
 def update_vm(ip_address, os_name):
+    print "Updating " + os_name + "-snap vm via " + ip_address
+
     # use package system to update the vm
     if os_name == 'fedora':
-        run_command(['ssh', "-o", "StrictHostKeyChecking no", 'root@' + ip_address, 'yum update -y'])
+        ssh_command('root@' + ip_address, 'yum update -y')
 
     elif os_name == 'ubuntu':
         env = os.environ
         env['DEBIAN_FRONTEND']='noninteractive'
-        run_command(['ssh', "-o", "StrictHostKeyChecking no", 'root@' + ip_address, 'apt-get update -y'], env=env)
-        run_command(['ssh', "-o", "StrictHostKeyChecking no", 'root@' + ip_address, 'apt-get upgrade -y'], env=env)
+        print "updating repos"
+        ssh_command('root@' + ip_address, 'apt-get update  -y', env=env)
+        print "upgrading packages"
+        # XXX hack needed, apt-get upgrade via ssh will not return for whatever reason,
+        #   so kill it after 15 minutes
+        ssh_command_with_timeout('root@' + ip_address, 'apt-get upgrade -y', "900", env=env)
+        print "done"
 
     # restart the system
-    run_command(['ssh', "-o", "StrictHostKeyChecking no", 'root@' + ip_address, 'reboot'])
+    ssh_command('root@' + ip_address, 'reboot')
 
     # wait for a bit
     time.sleep(60)
 
 # helper to destroy a libvirt instance for the specified os
 def destroy_vm(os_name):
+    print "Destroying " + os_name + "-snap vm"
+
     # destroy the vm via libvirt
     run_command(['virsh', 'destroy', os_name + '-snap'])
 
@@ -132,50 +156,59 @@ def destroy_vm(os_name):
 
 # helper to run tests on the specified instance / os
 def run_tests(ip_address, os_name):
+    print "Running tests on " + os_name + "-snap vm via " + ip_address
+
     # copy the bootstrapping script into place
-    run_command(['scp', "-o", "StrictHostKeyChecking no", 'snap_bootstrap.py', "root@" + ip_address + ":~/"])
+    scp_command('snap_bootstrap.py', 'root@' + ip_address + ':~/')
 
     # run the script
-    run_command(['ssh', "-o", "StrictHostKeyChecking no", 'root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' test'])
+    ssh_command('root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' test')
 
 # build package on the vm and copy it locally
 def build_package(ip_address, os_name):
+    print "Building package on " + os_name + "-snap vm via " + ip_address
+
     # copy the bootstrapping script into place
-    run_command(['scp', "-o", "StrictHostKeyChecking no", 'snap_bootstrap.py', "root@" + ip_address + ":~/"])
+    scp_command('snap_bootstrap.py', 'root@' + ip_address + ':~/')
 
     # run the script
-    run_command(['ssh', "-o", "StrictHostKeyChecking no", 'root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' build_package'])
+    ssh_command('root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' build_package')
 
     # copy the package locally
     if os_name == 'fedora':
-      run_command(['scp', "-o", "StrictHostKeyChecking no", "root@" + ip_address + ":~/rpmbuild/RPMS/noarch/" + SNAP_RPM, "."])
+      scp_command('root@' + ip_address + ':~/rpmbuild/RPMS/noarch/' + SNAP_RPM, '.')
     elif os_name == 'ubuntu':
-      run_command(['scp', "-o", "StrictHostKeyChecking no", "root@" + ip_address + ":~/" + SNAP_DEB, "."])
+      scp_command('root@' + ip_address + ':~/' + SNAP_DEB, '.')
 
 # helper to take a snapshot on the specified instance / os
 def take_snapshot(ip_address, os_name):
+    print "Taking snapshot on " + os_name + "-snap vm via " + ip_address
+
     # copy the bootstrapping script into place
-    run_command(['scp', "-o", "StrictHostKeyChecking no", 'snap_bootstrap.py', "root@" + ip_address + ":~/"])
+    scp_command('snap_bootstrap.py', 'root@' + ip_address + ':~/')
 
     # copy the snap package to the machine
     if os_name == 'fedora':
-      run_command(['scp', "-o", "StrictHostKeyChecking no", SNAP_RPM, "root@" + ip_address + ":~/"])
+      scp_command(SNAP_RPM, 'root@' + ip_address + ':~/')
     elif os_name == 'ubuntu':
-      run_command(['scp', "-o", "StrictHostKeyChecking no", SNAP_DEB, "root@" + ip_address + ":~/"])
+      scp_command(SNAP_DEB, 'root@' + ip_address + ':~/')
 
     # install snap
-    run_command(['ssh', "-o", "StrictHostKeyChecking no", 'root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' install_package'])
+    ssh_command('root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' install_package')
 
     # run the backup operation
-    run_command(['ssh', "-o", "StrictHostKeyChecking no", 'root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' backup'])
+    ssh_command('root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' backup')
 
     # scp the snapshot locally
-    run_command(['scp', "-o", "StrictHostKeyChecking no", 'root@' + ip_address + ':/tmp/snapfile.tgz', '.'])
+    scp_command('root@' + ip_address + ':/tmp/snapfile.tgz', '.')
 
 # helper to verify a snapshot on the specified instance / os
 def verify_snapshot(os_name):
-    if not os.path.isdir("snapdir"):
-        os.mkdir('snapdir')
+    print "Verifying snapshot of " + os_name + "-snap vm"
+
+    if os.path.isdir("snapdir"):
+        shutil.rmtree("snapdir")
+    os.mkdir('snapdir')
     os.chdir("./snapdir")
     paths = []
     tarball = tarfile.open(os.path.join("..", "snapfile.tgz"), "r")
@@ -201,9 +234,9 @@ def verify_snapshot(os_name):
       elements.append(element.firstChild.data)
     
     assert "mediawiki"           in elements
-    if UNDERLYING_OS == 'fedora':
+    if os_name == 'fedora':
         assert "postgresql-server"   in elements
-    elif UNDERLYING_OS == 'ubuntu':
+    elif os_name == 'ubuntu':
         assert "postgresql"   in elements
     
     doc = xml.dom.minidom.parse("files.xml")
@@ -211,31 +244,33 @@ def verify_snapshot(os_name):
     for element in doc.documentElement.childNodes:
       elements.append(element.firstChild.data)
     
-    assert "/etc/dummy.conf"   in elements
-    assert "/var/dummy.data"   not in elements
+    assert "etc/dummy.conf"   in elements
+    assert "var/dummy.data"   not in elements
     
     os.chdir("..")
     shutil.rmtree("snapdir")
 
 # helper to restore snapshot on the specified instance
 def restore_snapshot(ip_address, os_name):
+    print "Restoring snapshot of " + os_name + "-snap vm"
+
     # copy the bootstrapping script into place
-    run_command(['scp', "-o", "StrictHostKeyChecking no", 'snap_bootstrap.py', "root@" + ip_address + ":~/"])
+    scp_command('snap_bootstrap.py', 'root@' + ip_address + ':~/')
 
     # copy the snap package to the machine
     if os_name == 'fedora':
-      run_command(['scp', "-o", "StrictHostKeyChecking no", SNAP_RPM, "root@" + ip_address + ":~/"])
+      scp_command(SNAP_RPM, 'root@' + ip_address + ':~/')
     elif os_name == 'ubuntu':
-      run_command(['scp', "-o", "StrictHostKeyChecking no", SNAP_DEB, "root@" + ip_address + ":~/"])
+      scp_command(SNAP_DEB, 'root@' + ip_address + ':~/')
 
     # install it
-    run_command(['ssh', "-o", "StrictHostKeyChecking no", 'root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' install_package'])
+    ssh_command('root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' install_package')
 
     # scp the snapshot remotely
-    run_command(['scp', "-o", "StrictHostKeyChecking no", 'snapfile.tgz', 'root@' + ip_address + ':/tmp/'])
+    scp_command('snapfile.tgz', 'root@' + ip_address + ':/tmp/')
 
     # run the script
-    return run_command(['ssh', "-o", "StrictHostKeyChecking no", 'root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' restore'])
+    return ssh_command('root@' + ip_address, 'python snap_bootstrap.py ' + os_name + ' restore')
 
 # for each image
 for img_name in IMAGES.keys():
@@ -267,7 +302,12 @@ for img_name in IMAGES.keys():
     output = restore_snapshot(ip_address, img_name)
 
     # verify snapshot is restored on running instance
-    result = re.findall("ERROR([^\n])*\n", output)
+    result = re.findall("ERROR([^\n]*)\n", output)
     for res in result:
         print "Verification Error: ", res
+    if len(result) != 0:
+        print "Verification output: "
+        print output
     assert len(result) == 0
+
+    destroy_vm(img_name)
