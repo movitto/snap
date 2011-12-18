@@ -26,7 +26,7 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
     def backup(self, basedir, include=[], exclude=[]):
         '''backup apt configuration and repositories'''
         # backup the apt config in /etc/apt
-        for apt_conf in FileManager.get_all_files(include_dirs=['/etc/apt']):
+        for apt_conf in FileManager.get_all_files(include=['/etc/apt']):
             SFile(apt_conf).copy_to(basedir)
           
     def restore(self, basedir):
@@ -36,6 +36,6 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
             return
 
         # restore the apt config to /etc/apt
-        for apt_conf in FileManager.get_all_files(include_dirs=[basedir + "/etc/apt"]):
+        for apt_conf in FileManager.get_all_files(include=[basedir + "/etc/apt"]):
             partial_path = apt_conf.replace(basedir + "/", "")
             SFile(partial_path).copy_to(self.fs_root, path_prefix=basedir)

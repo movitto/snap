@@ -48,9 +48,9 @@ class SnapFile:
 
     def __prepare_file_for_tarball(tarball, fullpath, partialpath):
         '''set attributes of a file for inclusion in a tarball'''
-        fs = os.stat(fullpath)
         tarinfo = tarball.gettarinfo(partialpath)
         tarinfo.name = partialpath
+        fs = os.stat(fullpath)
         tarinfo.uid = fs.st_uid
         tarinfo.gid = fs.st_gid
         tarinfo.mtime = fs.st_mtime
@@ -78,7 +78,7 @@ class SnapFile:
             tarball.addfile(self.__prepare_file_for_tarball(tarball, sdir, partialpath))
 
         # copy files into snapfile
-        for tfile in FileManager.get_all_files(include_dirs=[os.getcwd()]):
+        for tfile in FileManager.get_all_files(include=[os.getcwd()]):
             partialpath = tfile.replace(self.snapdirectory + seperator, "")
             tarball.addfile(self.__prepare_file_for_tarball(tarball, tfile, partialpath), file(tfile, 'rb'))
 

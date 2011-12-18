@@ -29,7 +29,7 @@ class Syum(snap.snapshottarget.SnapshotTarget):
         SFile("/etc/yum.conf").copy_to(basedir)
 
         # then backup the individual repo files
-        for yum_repo in FileManager.get_all_files(include_dirs=['/etc/yum.repos.d']):
+        for yum_repo in FileManager.get_all_files(include=['/etc/yum.repos.d']):
             SFile(yum_repo).copy_to(basedir)
           
     def restore(self, basedir):
@@ -42,7 +42,7 @@ class Syum(snap.snapshottarget.SnapshotTarget):
         SFile("etc/yum.conf").copy_to(self.fs_root, path_prefix=basedir)
 
         # then restore individual repos
-        for yum_repo in FileManager.get_all_files(include_dirs=[basedir + "/etc/yum.repos.d"]):
+        for yum_repo in FileManager.get_all_files(include=[basedir + "/etc/yum.repos.d"]):
             partial_path = yum_repo.replace(basedir + "/" , "")
             SFile(partial_path).copy_to(self.fs_root, path_prefix=basedir)
 

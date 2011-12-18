@@ -84,11 +84,11 @@ class FileManagerTest(unittest.TestCase):
 
     def testGetAllFiles(self):
         data_path = os.path.join(os.path.dirname(__file__), "data", "tmp")
-        files = FileManager.get_all_files(include_dirs=[data_path])
+        files = FileManager.get_all_files(include=[data_path])
         self.assertIn(os.path.join(data_path, "file1"), files)
         self.assertIn(os.path.join(data_path, "subdir", "file2"), files)
 
-        files = FileManager.get_all_files(include_dirs=[data_path],
+        files = FileManager.get_all_files(include=[data_path],
                                           exclude_dirs=[os.path.join(data_path, 'subdir')])
         self.assertIn(os.path.join(data_path, "file1"), files)
         self.assertNotIn(os.path.join(data_path, "subdir", "file2"), files)

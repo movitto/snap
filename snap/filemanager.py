@@ -116,35 +116,42 @@ class FileManager:
         return stdout
     capture_output = staticmethod(capture_output)
 
-    def get_all_files(include_dirs=[], exclude_dirs=[]):
+    def get_all_files(include=[], exclude=[]):
         '''return a list of paths corresponding to files in one or more directories - static method
 
-        @param include_dirs - list of directories to start in
-        @param exclude_dirs - list of directories to exclude'''
-        if len(include_dirs) == 0:
-            include_dirs.append(snap.osregistry.OS.get_root())
+        @param include - list of files/directories to include
+        @param exclude - list of files/directories to exclude'''
+        if len(include) == 0:
+            include.append(snap.osregistry.OS.get_root())
         
         files = []
-        # iterate over each directory in the include list
-        for directory in include_dirs:
+        # iterate over each include in the list
+        for ifile in include:
             try:
-                for name in os.listdir(directory):
-                    fullpath = os.path.join(directory, name)
-                    # add all files in the directory
-                    if os.path.isfile(fullpath) and not fullpath in files:
-                        files.append(fullpath)
-    
-                # iterate over all subdirectories
-                subdirs = FileManager.get_all_subdirectories(directory)
-                for subdirectory in subdirs:
-                    fullpath = os.path.join(directory, subdirectory)
-                    # exclude those in the exclude list
-                    if not fullpath in exclude_dirs:
-                        subdir_files = FileManager.get_all_files([fullpath], exclude_dirs)
-                        # add all files in the subdirectory
-                        for subdir_file in subdir_files:
-                            if not subdir_file in files:
-                                files.append(subdir_file)
+                # if its a file, simple add if we haven't already
+                if os.path.isfile(ifile):
+                    if not ifile in files and \
+                       not ifile in exclude:
+                        files.append(ifile)
+
+                # if its a directory add all files in it and its subdirs
+                elif os.path.isdir(ifile):
+                    idir = ifile
+
+                    children = os.listdir(idir) + \
+                               FileManager.get_all_subdirectories(idir)
+
+                    for child in children:
+                        fullpath = os.path.join(idir, child)
+                        if not fullpath in exclude:
+                            cfiles = [fullpath]
+                            if os.path.isdir(fullpath):
+                                cfiles = FileManager.get_all_files(cfiles, exclude)
+                            for cpath in cfiles:
+                                if not cpath in files and \
+                                   not cpath in exclude:
+                                    files.append(cpath)
+
             except:
                 pass # silently ignore errors
         return files

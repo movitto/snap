@@ -49,7 +49,7 @@ class Win(snap.snapshottarget.SnapshotTarget):
 
         # backup program files
         for pkg in packages:
-            for pkg_file in FileManager.get_all_files(include_dirs=[pkg.name]):
+            for pkg_file in FileManager.get_all_files(include=[pkg.name]):
                 SFile(pkg_file).copy_to(os.path.join(basedir, "windows-packages"))
 
         # TODO Backup registry?
@@ -74,7 +74,7 @@ class Win(snap.snapshottarget.SnapshotTarget):
         # TODO restore registry?
 
         # restore program files
-        for pkg_file in FileManager.get_all_files(include_dirs=[os.path.join(basedir, "windows-packages")]):
+        for pkg_file in FileManager.get_all_files(include=[os.path.join(basedir, "windows-packages")]):
             partial_path = pkg_file.replace(os.path.join(basedir, "windows-packages") + "\\", "")
             try:
                 SFile(partial_path).copy_to(path_prefix=os.path.join(basedir, "windows-packages"))

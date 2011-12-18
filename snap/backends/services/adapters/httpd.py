@@ -62,7 +62,7 @@ class Httpd:
     def backup(self, basedir):
        # backup the webroot, confd
        sfiles = []
-       files = snap.filemanager.FileManager.get_all_files(include_dirs=[Httpd.DOCUMENT_ROOT, Httpd.CONF_D])
+       files = snap.filemanager.FileManager.get_all_files(include=[Httpd.DOCUMENT_ROOT, Httpd.CONF_D])
        for tfile in files:
            if os.access(tfile, os.R_OK):
                sfile = SFile(tfile)

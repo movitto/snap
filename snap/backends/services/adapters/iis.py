@@ -37,7 +37,7 @@ class Iis:
     def backup(self, basedir):
         # backup the configuration directory
         sfiles = []
-        files = snap.filemanager.FileManager.get_all_files(include_dirs=[Iis.CONFIG_ROOT])
+        files = snap.filemanager.FileManager.get_all_files(include=[Iis.CONFIG_ROOT])
         for tfile in files:
             if os.access(tfile, os.R_OK):
                 sfile = SFile(tfile)
