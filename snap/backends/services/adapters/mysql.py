@@ -120,9 +120,12 @@ class Mysql:
             dispatcher.stop_service(Mysql.DAEMON)
 
         server = subprocess.Popen([Mysql.MYSQLDSAFE_CMD, '--skip-grant-tables'])
-        client = subprocess.Popen([Mysql.MYSQL_CMD, '-u', 'root', '-e', 'update user set password=PASSWORD("' + mysql_password + '") where user="root"; flush privileges;'])
-        client.kill()
-        server.kill()
+        client = subprocess.Popen([Mysql.MYSQL_CMD, 'mysql', '-u', 'root', '-e', "update user set password=PASSWORD('" + mysql_password + "') where user='root'; flush privileges;"])
+        client.wait()
+        client = subprocess.Popen([Mysql.MYSQLADMIN_CMD, 'shutdown'])
+        client.wait()
+        if server.poll() == None: # race condition?
+            server.kill()
 
         if already_running:
             dispatcher.start_service(Mysql.DAEMON)
