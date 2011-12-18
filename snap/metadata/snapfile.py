@@ -80,7 +80,8 @@ class SnapFile:
         # copy files into snapfile
         for tfile in FileManager.get_all_files(include=[os.getcwd()]):
             partialpath = tfile.replace(self.snapdirectory + seperator, "")
-            tarball.addfile(self.__prepare_file_for_tarball(tarball, tfile, partialpath), file(tfile, 'rb'))
+            if os.path.exists(tfile):
+                tarball.addfile(self.__prepare_file_for_tarball(tarball, tfile, partialpath), file(tfile, 'rb'))
 
         # finish up tarball creation
         tarball.close()
