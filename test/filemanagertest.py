@@ -89,7 +89,7 @@ class FileManagerTest(unittest.TestCase):
         self.assertIn(os.path.join(data_path, "subdir", "file2"), files)
 
         files = FileManager.get_all_files(include=[data_path],
-                                          exclude_dirs=[os.path.join(data_path, 'subdir')])
+                                          exclude=[os.path.join(data_path, 'subdir')])
         self.assertIn(os.path.join(data_path, "file1"), files)
         self.assertNotIn(os.path.join(data_path, "subdir", "file2"), files)
 
