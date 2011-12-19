@@ -87,29 +87,28 @@ class YumBackendTest(unittest.TestCase):
             encoded = PackageRegistry.encode('yum', pkg.name)
             self.assertIn(encoded, pkgs)
 
-    # TODO this test works but takes a while to execute
-    #def testRestorePackages(self):
-    #    restore_target = snap.backends.packages.syum.Syum()
-    #    restore_target.backup(self.fs_root)
-    #    restore_target.fs_root = self.fs_root
-    #    restore_target.restore(self.fs_root)
+    def testRestorePackages(self):
+        restore_target = snap.backends.packages.syum.Syum()
+        restore_target.backup(self.fs_root)
+        restore_target.fs_root = self.fs_root
+        restore_target.restore(self.fs_root)
 
-    #    record = PackagesRecordFile(self.fs_root + "/packages.xml")
-    #    record_packages = record.read()
+        record = PackagesRecordFile(self.fs_root + "/packages.xml")
+        record_packages = record.read()
 
-    #    record_package_names = []
-    #    for pkg in record_packages:
-    #        record_package_names.append(pkg.name)
+        record_package_names = []
+        for pkg in record_packages:
+            record_package_names.append(pkg.name)
 
-    #    installed_package_names = []
-    #    lyum = yum.YumBase()
-    #    lyum.rpmdb.dbpath = self.fs_root + '/var/lib/rpm'
-    #    for pkg in lyum.rpmdb:
-    #        installed_package_names.append(pkg.name)
+        installed_package_names = []
+        lyum = yum.YumBase()
+        lyum.rpmdb.dbpath = self.fs_root + '/var/lib/rpm'
+        for pkg in lyum.rpmdb:
+            installed_package_names.append(pkg.name)
 
-    #    for pkg in record_package_names:
-    #        decoded = PackageRegistry.decode('yum', pkg)
-    #        self.assertIn(decoded, installed_package_names)
+        for pkg in record_package_names:
+            decoded = PackageRegistry.decode('yum', pkg)
+            self.assertIn(decoded, installed_package_names)
 
     def testBackupFiles(self):
         f=open(self.fs_root + "/foo" , 'w')
