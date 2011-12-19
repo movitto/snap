@@ -27,6 +27,8 @@ import snap.backends.packages.sapt
 from snap.metadata.sfile   import FilesRecordFile
 from snap.metadata.package import PackagesRecordFile
 
+from snap.packageregistry  import PackageRegistry
+
 class AptBackendTest(unittest.TestCase):
     def setUp(self):
         self.fs_root = os.path.join(os.path.dirname(__file__), "data/fs_root")
@@ -78,7 +80,8 @@ class AptBackendTest(unittest.TestCase):
         # ensure all the system's packages have been recorded
         for pkg in apt.Cache():
             if pkg.is_installed:
-                self.assertIn(pkg.name, pkgs)
+                encoded = PackageRegistry.encode('apt', pkg.name)
+                self.assertIn(encoded, pkgs)
 
     # TODO this test works but takes a while to execute
     def testRestorePackages(self):
@@ -98,7 +101,8 @@ class AptBackendTest(unittest.TestCase):
         cache.open(None)
         for pkg in cache:
             if pkg.is_installed:
-                self.assertIn(pkg.name, record_package_names)
+                encoded = PackageRegistry.encode('apt', pkg.name)
+                self.assertIn(encoded, record_package_names)
 
     def testBackupFiles(self):
         f=open(self.fs_root + "/foo" , 'w')

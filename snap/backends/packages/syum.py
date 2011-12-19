@@ -17,6 +17,7 @@ import sets
 
 import snap
 from snap.metadata.package import Package, PackagesRecordFile
+from snap.packageregistry  import PackageRegistry
 
 class Syum(snap.snapshottarget.SnapshotTarget):
     '''implements the snap! packages target backend using the yum package system'''
@@ -39,7 +40,8 @@ class Syum(snap.snapshottarget.SnapshotTarget):
                 if snap.config.options.log_level_at_least('verbose'):
                     snap.callback.snapcallback.message("Backing up package " + pkg.name);
                 packagenames.add(pkg.name)
-                packages.append(Package(pkg.name, pkg.version))
+                encoded_pkgname = PackageRegistry.encode('yum', pkg.name)
+                packages.append(Package(encoded_pkgname, pkg.version))
 
         # write record file to basedir
         record = PackagesRecordFile(basedir + "/packages.xml")
@@ -75,9 +77,11 @@ class Syum(snap.snapshottarget.SnapshotTarget):
 
         # find the ones available to install
         for pkg in packages:
+            decoded_pkgname = PackageRegistry.decode('yum', pkg.name)
+
             # ignore packages already installed (these are already marked to be updated)
-            if not self.yum.rpmdb.installed(pkg.name):
-                exactmatch, matched, unmatched = yum.packages.parsePackages(pl.available, [pkg.name])
+            if not self.yum.rpmdb.installed(decoded_pkgname):
+                exactmatch, matched, unmatched = yum.packages.parsePackages(pl.available, [decoded_pkgname])
 
                 # install packages with best matching architectures
                 archs = {}
@@ -88,7 +92,7 @@ class Syum(snap.snapshottarget.SnapshotTarget):
                     pkg = archs[arch]
                     if pkg:
                         if snap.config.options.log_level_at_least('verbose'):
-                            snap.callback.snapcallback.message("Restoring package " + pkg.name);
+                            snap.callback.snapcallback.message("Restoring package " + decoded_pkgname);
                         self.yum.install(pkg)
 
         # build / run the transaction

@@ -28,6 +28,8 @@ from snap.filemanager      import FileManager
 from snap.metadata.sfile   import FilesRecordFile
 from snap.metadata.package import PackagesRecordFile
 
+from snap.packageregistry  import PackageRegistry
+
 class YumBackendTest(unittest.TestCase):
     def setUp(self):
         self.fs_root = os.path.join(os.path.dirname(__file__), "data/fs_root")
@@ -80,9 +82,10 @@ class YumBackendTest(unittest.TestCase):
         for pkg in record_packages:
             pkgs.append(pkg.name)
 
-        # ensure all the system's packages have been recorded
+        # ensure all the system's packages have been encoded and recorded
         for pkg in yum.YumBase().rpmdb:
-            self.assertIn(pkg.name, pkgs)
+            encoded = PackageRegistry.encode('yum', pkg.name)
+            self.assertIn(encoded, pkgs)
 
     # TODO this test works but takes a while to execute
     #def testRestorePackages(self):
@@ -105,7 +108,8 @@ class YumBackendTest(unittest.TestCase):
     #        installed_package_names.append(pkg.name)
 
     #    for pkg in record_package_names:
-    #        self.assertIn(pkg, installed_package_names)
+    #        decoded = PackageRegistry.decode('yum', pkg)
+    #        self.assertIn(decoded, installed_package_names)
 
     def testBackupFiles(self):
         f=open(self.fs_root + "/foo" , 'w')

@@ -17,6 +17,7 @@ import sets
 
 import snap
 from snap.metadata.package import Package, PackagesRecordFile
+from snap.packageregistry  import PackageRegistry
 
 class Sapt(snap.snapshottarget.SnapshotTarget):
     '''implements the snap! packages target backend using the apt package system'''
@@ -42,7 +43,8 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
                 if snap.config.options.log_level_at_least('verbose'):
                     snap.callback.snapcallback.message("Backing up package " + pkg_name)
                 packagenames.add(pkg_name)
-                packages.append(Package(pkg_name, pkg.versions[0].version))
+                encoded_pkgname = PackageRegistry.encode('apt', pkg.name)
+                packages.append(Package(encoded_pkgname, pkg.versions[0].version))
 
         # write record file to basedir
         record = PackagesRecordFile(basedir + "/packages.xml")
@@ -70,9 +72,11 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
 
         # mark necessary packages for installation
         for pkg in packages:
+            decoded_pkgname = PackageRegistry.decode('apt', pkg.name)
+
             if snap.config.options.log_level_at_least('verbose'):
-                snap.callback.snapcallback.message("Restoring package " + pkg.name);
-            pkg = self.cache[pkg.name]
+                snap.callback.snapcallback.message("Restoring package " + decoded_pkgname);
+            pkg = self.cache[decoded_pkgname]
             if not pkg.is_installed:
                 pkg.mark_install()
 
