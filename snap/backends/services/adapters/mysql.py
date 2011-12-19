@@ -111,6 +111,7 @@ class Mysql:
 
     def set_root_pass():
         '''helper to set the mysql root password'''
+        null = open(OSUtils.null_file(), 'w')
         dispatcher = Dispatcher.os_dispatcher()
         
         mysql_password = snap.config.options.service_options['mysql_password']
@@ -119,10 +120,11 @@ class Mysql:
         if already_running:
             dispatcher.stop_service(Mysql.DAEMON)
 
-        server = subprocess.Popen([Mysql.MYSQLDSAFE_CMD, '--skip-grant-tables'])
-        client = subprocess.Popen([Mysql.MYSQL_CMD, 'mysql', '-u', 'root', '-e', "update user set password=PASSWORD('" + mysql_password + "') where user='root'; flush privileges;"])
+        server = subprocess.Popen([Mysql.MYSQLDSAFE_CMD, '--skip-grant-tables'], stdout=null, stderr=null)
+        client = subprocess.Popen([Mysql.MYSQL_CMD, 'mysql', '-u', 'root', '-e', "update user set password=PASSWORD('" + mysql_password + "') where user='root'; flush privileges;"],
+                                  stdout=null, stderr=null)
         client.wait()
-        client = subprocess.Popen([Mysql.MYSQLADMIN_CMD, 'shutdown'])
+        client = subprocess.Popen([Mysql.MYSQLADMIN_CMD, 'shutdown'], stdout=null, stderr=null)
         client.wait()
         if server.poll() == None: # race condition?
             server.kill()
