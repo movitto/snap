@@ -36,6 +36,7 @@ SNAP_DEB="snap_" + SNAP_VERSION + "_all.deb"
 # base images which we will base instances off of
 # these should have a ssh server installed on them and configured to auto-start on boot
 #   (should not require any credentials for root access)
+# see http://mo.morsi.org/blog/node/355 for how to do this
 IMAGES = { 
    'fedora'     : '/home/libvirt/images/F15-snap.img.orig',
    'ubuntu'     : '/home/libvirt/images/ubuntu-snap.img.orig'
