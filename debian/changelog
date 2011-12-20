@@ -1,3 +1,13 @@
+snap (0.6) unstable; urgency=low
+
+  * Many code optimizations
+
+  * Improved documentation, test suite and test harness
+
+  * Start of cross-os migrations
+
+ -- Mo Morsi <mo@morsi.org>  Mon, 19 Dec 2011 21:50:00 -0500
+
 snap (0.5) unstable; urgency=low
 
   * Initial release

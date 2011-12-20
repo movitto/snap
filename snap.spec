@@ -7,14 +7,14 @@
 %global _iconsscaldir  %{_datadir}/icons/hicolor/scalable/apps
 
 Name:         snap
-Version:      0.5
-Release:      8%{?dist}
+Version:      0.6
+Release:      1%{?dist}
 Summary:      A modular system backup/restore utility
 
 Group:       Applications/System
 License:     GPLv3
 URL:         http://projects.morsi.org/snap
-Source0:     http://mo.morsi.org/files/snap/snap-0.5.tgz
+Source0:     http://mo.morsi.org/files/snap/snap-0.6.tgz
 
 BuildArch:      noarch
 BuildRequires:  desktop-file-utils
@@ -103,6 +103,9 @@ ln -s snap.1.gz snaptool.1.gz
 %{_icons48dir}/gsnap.png
 
 %changelog
+* Mon Dec 19 2011 Mo Morsi <mo@morsi.org> 0.6-1
+- new upstream release
+
 * Sat Dec 10 2011 Mo Morsi <mo@morsi.org> 0.5-8
 - include additional sized icons
 - include pixmap file

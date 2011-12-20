@@ -1,4 +1,4 @@
-export VERSION=0.5
+export VERSION=0.6
 export PYTHON = python
 export PYDOC  = pydoc
 export PYTHONPATH='.'

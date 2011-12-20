@@ -1,4 +1,4 @@
-SNAP_VERSION = '0.5'
+SNAP_VERSION = '0.6'
 
 # locations which to load snap! configuration from
 CONFIG_FILES = ['/etc/snap.conf', '~/.snap',

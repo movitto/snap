@@ -26,7 +26,7 @@ import xml.dom.minidom
 import virtinst.util
 
 # some parameters to use when building the package
-SNAP_VERSION='0.5'
+SNAP_VERSION='0.6'
 RPM_RELEASE='8'
 FEDORA_RELEASE='15'
 

@@ -34,7 +34,7 @@ elif os.path.isdir('/'):
                    ['resources/snap-redux.glade', 'resources/snap.png'])]
 
 setup(name='snap',
-	version='0.5',
+	version='0.6',
 	description='system snapshotter and restoration utility',
 	author='Mo Morsi',
 	author_email='mo@morsi.org',

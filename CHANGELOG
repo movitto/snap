@@ -1,3 +1,11 @@
+Version 0.6 - 10/23/11
+ Third major release
+   - many code optimizations / improvements
+   - improved documentation, test suite and harness
+   - start of cross-os migrations
+ Contributers:
+   Mo Morsi - mo@morsi.org
+
 Version 0.5 - 10/23/11
  Second major release
    - revamped architecture - include concepts of pluggable snapshot targets,
