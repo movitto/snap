@@ -106,7 +106,7 @@ class FileManager:
 
         stdoutf = tempfile.TemporaryFile()
         #nullf = open(OSUtils.null_file(), 'w')
-        popen   = subprocess.Popen(command, env=env, stdout=stdoutf)#, stderr=nullf)
+        popen   = subprocess.Popen(command, env=env, stdout=stdoutf, stderr=stdoutf)
         popen.wait()
 
         stdoutf.seek(0)
@@ -116,7 +116,7 @@ class FileManager:
         return stdout
     capture_output = staticmethod(capture_output)
 
-    def get_all_files(include=[], exclude=[]):
+    def get_all_files(include=[], exclude=[], recursive=True):
         '''return a list of paths corresponding to files in one or more directories - static method
 
         @param include - list of files/directories to include
@@ -145,7 +145,7 @@ class FileManager:
                         fullpath = os.path.join(idir, child)
                         if not fullpath in exclude:
                             cfiles = [fullpath]
-                            if os.path.isdir(fullpath):
+                            if recursive and os.path.isdir(fullpath):
                                 cfiles = FileManager.get_all_files(cfiles, exclude)
                             for cpath in cfiles:
                                 if not cpath in files and \

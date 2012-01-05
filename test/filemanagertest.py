@@ -82,6 +82,10 @@ class FileManagerTest(unittest.TestCase):
         out = FileManager.capture_output(['echo', 'yo'])
         self.assertEqual("yo\n", out)
 
+    def testCaptureOutputWithStdout(self):
+        out = FileManager.capture_output(['expr', '1', '/', '0'])
+        self.assertEqual("expr: division by zero\n", out)
+
     def testGetAllFiles(self):
         data_path = os.path.join(os.path.dirname(__file__), "data", "tmp")
         files = FileManager.get_all_files(include=[data_path])
@@ -90,6 +94,10 @@ class FileManagerTest(unittest.TestCase):
 
         files = FileManager.get_all_files(include=[data_path],
                                           exclude=[os.path.join(data_path, 'subdir')])
+        self.assertIn(os.path.join(data_path, "file1"), files)
+        self.assertNotIn(os.path.join(data_path, "subdir", "file2"), files)
+
+        files = FileManager.get_all_files(include=[data_path], recursive=False)
         self.assertIn(os.path.join(data_path, "file1"), files)
         self.assertNotIn(os.path.join(data_path, "subdir", "file2"), files)
 
