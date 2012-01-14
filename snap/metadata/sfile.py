@@ -91,6 +91,8 @@ class SFile(object):
             ofs = os.stat(source_path)
             snap.osregistry.OSUtils.chown(dest_path, uid=ofs.st_uid, gid=ofs.st_gid)
 
+        return self
+
 class FilesRecordFile:
     '''a snap files record file, contains list of files modified, to restore'''
     
