@@ -21,6 +21,7 @@ from snap.exceptions        import InsufficientPermissionError
 from snap.filemanager       import FileManager
 from snap.snapshottarget    import SnapshotTarget
 from snap.metadata.snapfile import SnapFile
+from snap.outputformatter   import OutputFormatter
 
 class SnapBase:
     def __init__(self):
@@ -85,9 +86,11 @@ class SnapBase:
             excludes = config.options.target_excludes[target]
             backend.backup(construct_dir, include=includes, exclude=excludes)
 
-        SnapFile(snapfile=config.options.snapfile,
+        OutputFormatter.create(config.options.outputformat,
+                 outfile=config.options.snapfile,
                  snapdirectory=construct_dir,
-                 encryption_password=config.options.encryption_password).compress()
+                 encryption_password=config.options.encryption_password)
+
         if config.options.log_level_at_least('normal'):
             callback.snapcallback.message("Snapshot completed")
 
@@ -106,9 +109,10 @@ class SnapBase:
         construct_dir = tempfile.mkdtemp()
         FileManager.make_dir(construct_dir)
 
-        SnapFile(snapfile=config.options.snapfile,
+        OutputFormatter.retrieve(config.options.outputformat,
+                 infile=config.options.snapfile,
                  snapdirectory=construct_dir,
-                 encryption_password=config.options.encryption_password).extract()
+                 encryption_password=config.options.encryption_password)
 
         backends = self.load_backends()
         configured_targets = backends.keys()

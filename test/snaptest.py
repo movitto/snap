@@ -40,6 +40,7 @@ class SnapBaseTest(unittest.TestCase):
         self.orig_snapfile = snap.config.options.snapfile
         self.tfile = os.path.join(tempfile.gettempdir(), "snap-test.tgz")
         snap.config.options.snapfile = self.tfile
+        snap.config.options.outputformat = 'snapfile'
 
     def tearDown(self):
         snap.osregistry.OS.current_os = self.orig_os

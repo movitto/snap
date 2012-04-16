@@ -15,6 +15,7 @@ import os
 
 import snap
 from snap.metadata.sfile import SFile
+from snap.metadata.repo  import Repo, ReposRecordFile
 from snap.filemanager import FileManager
 
 class Sapt(snap.snapshottarget.SnapshotTarget):
@@ -26,14 +27,25 @@ class Sapt(snap.snapshottarget.SnapshotTarget):
     def backup(self, basedir, include=[], exclude=[]):
         '''backup apt configuration and repositories'''
         # backup the apt config in /etc/apt
+        repos = []
         for apt_conf in FileManager.get_all_files(include=['/etc/apt']):
             SFile(apt_conf).copy_to(basedir)
+            repos.append(Repo()) # FIXME parse repo info
+
+        # write record file to basedir
+        record = ReposRecordFile(basedir + "/repos.xml")
+        record.write(repos)
           
     def restore(self, basedir):
         '''restore yum configuration and repositories'''
         # return if we cannot find require files
         if not os.path.isdir(basedir + "/etc/apt"):
             return
+
+        # read files from the record file
+        # tho we don't do anything with this info here
+        record = ReposRecordFile(basedir + "/repos.xml")
+        repos = record.read()
 
         # restore the apt config to /etc/apt
         for apt_conf in FileManager.get_all_files(include=[basedir + "/etc/apt"]):

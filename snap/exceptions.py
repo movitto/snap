@@ -53,3 +53,10 @@ class InsufficientPermissionError(SnapError):
 
     def __init__(self,message = ''):
         SnapError.__init__(self, message)
+
+class InvalidOperationError(SnapError):
+    """The requested operation is invalid for the context it is invoked in"""
+
+    def __init__(self,message = ''):
+        SnapError.__init__(self, message)
+

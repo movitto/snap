@@ -26,6 +26,7 @@ import snap.backends.packages.sapt
 
 from snap.metadata.sfile   import FilesRecordFile
 from snap.metadata.package import PackagesRecordFile
+from snap.metadata.repo    import ReposRecordFile
 
 from snap.packageregistry  import PackageRegistry
 
@@ -54,11 +55,23 @@ class AptBackendTest(unittest.TestCase):
             if not os.path.isdir("/etc/apt/" + afile) or len(os.listdir("/etc/apt/"+afile)) > 0:
                 self.assertTrue(os.path.exists(self.fs_root + "/etc/apt/" + afile))
 
+        repos = []
+        self.assertTrue(os.path.exists(self.fs_root + "/repos.xml"))
+        record = ReposRecordFile(self.fs_root + "/repos.xml")
+        record_repos = record.read()
+        for repo in record_repos:
+            repos.append(repo.url)
+
+        # FIXME verify repos contents
+
 
     def testRestoreRepos(self):
         os.makedirs(self.basedir + "/etc/apt")
         f=open(self.basedir + "/etc/apt/foo" , 'w')
         f.write("bar")
+        f.close()
+        f=open(self.basedir + "repos.xml" , 'w')
+        f.write("<repos></repos>")
         f.close()
 
         restore_target = snap.backends.repos.sapt.Sapt()

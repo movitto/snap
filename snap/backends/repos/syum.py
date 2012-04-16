@@ -12,9 +12,11 @@
 # GNU General Public License for more details.
 
 import os
+import re
 
 import snap
 from snap.metadata.sfile import SFile
+from snap.metadata.repo  import Repo, ReposRecordFile
 from snap.filemanager import FileManager
 
 class Syum(snap.snapshottarget.SnapshotTarget):
@@ -29,14 +31,33 @@ class Syum(snap.snapshottarget.SnapshotTarget):
         SFile("/etc/yum.conf").copy_to(basedir)
 
         # then backup the individual repo files
+        repos = []
         for yum_repo in FileManager.get_all_files(include=['/etc/yum.repos.d']):
             SFile(yum_repo).copy_to(basedir)
+
+            # parse/extract repo info
+            baseurl = re.compile('baseurl=(.*)\n')
+            mirrorlist = re.compile('mirrorlist=(.*)\n')
+            contents = FileManager.read_file(yum_repo)
+            for match in baseurl.findall(contents):
+                repos.append(Repo(url=match))
+            for match in mirrorlist.findall(contents):
+                repos.append(Repo(url=match))
+
+        # write record file to basedir
+        record = ReposRecordFile(basedir + "/repos.xml")
+        record.write(repos)
           
     def restore(self, basedir):
         '''restore yum configuration and repositories'''
         # return if we cannot find require files
         if not os.path.isdir(basedir + "/etc/yum.repos.d"):
             return
+
+        # read files from the record file
+        # tho we don't do anything with this info here
+        record = ReposRecordFile(basedir + "/repos.xml")
+        repos = record.read()
 
         # first restore yum configuration
         SFile("etc/yum.conf").copy_to(self.fs_root, path_prefix=basedir)

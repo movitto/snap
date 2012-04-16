@@ -85,6 +85,7 @@ class ConfigTest(unittest.TestCase):
         self.assertNotIn('!/home/mmorsi', snap.config.options.target_includes['files'])
         self.assertIn('/home/mmorsi', snap.config.options.target_excludes['files'])
 
+        self.assertEqual('tdl', snap.config.options.outputformat)
         self.assertEqual('/tmp/test-snap-shot', snap.config.options.snapfile)
         self.assertEqual('quiet', snap.config.options.log_level)
         self.assertEqual('foobar', snap.config.options.encryption_password)
@@ -101,6 +102,16 @@ class ConfigTest(unittest.TestCase):
         with self.assertRaises(snap.exceptions.ArgError) as context:
             config.verify_integrity()
         self.assertEqual(context.exception.message, 'Must specify backup or restore')
+        pass
+
+    def testValidateOutputFormat(self):
+        # ensure that if outputformat is not specified, exception is thrown
+        snap.config.options.mode = snap.config.ConfigOptions.BACKUP
+        snap.config.options.outputformat = None
+        config = snap.config.Config()
+        with self.assertRaises(snap.exceptions.ArgError) as context:
+            config.verify_integrity()
+        self.assertEqual(context.exception.message, 'Must specify valid output format')
         pass
 
     def testValidateRestoreSnapFile(self):

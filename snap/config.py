@@ -47,6 +47,9 @@ class ConfigOptions:
         # currently supports 'quiet', 'normal', 'verbose', 'debug'
         self.log_level = 'normal'
 
+        # output format to backup / restore
+        self.outputformat = 'snapfile'
+
         # location of the snapfile to backup to / restore from
         self.snapfile = None
 
@@ -164,10 +167,13 @@ class ConfigFile:
                     if val:
                         snap.config.options.target_backends[backend] = False
 
+        of = self.__get_string('outputformat')
         sf = self.__get_string('snapfile')
         ll = self.__get_string('loglevel')
         enp = self.__get_string('encryption_password')
         
+        if of != None:
+            snap.config.options.outputformat = of
         if sf != None:
             snap.config.options.snapfile = sf
         if ll != None:
@@ -205,6 +211,7 @@ class Config:
         self.parser.add_option('', '--restore', dest='restore', action='store_true', default=False, help='Restore snapshot')
         self.parser.add_option('', '--backup', dest='backup', action='store_true', default=False, help='Take snapshot')
         self.parser.add_option('-l', '--log-level', dest='log_level', action='store', default="normal", help='Log level (quiet, normal, verbose, debug)')
+        self.parser.add_option('-o', '--outputformat', dest='outputformat', action='store', default=None, help='Output file format')
         self.parser.add_option('-f', '--snapfile', dest='snapfile', action='store', default=None, help='Snapshot file')
         self.parser.add_option('-p', '--password', dest='encryption_password', action='store', default=None, help='Snapshot File Encryption/Decryption Password')
         # FIXME how to permit parameter lists for some of these
@@ -219,6 +226,8 @@ class Config:
             snap.config.options.mode = ConfigOptions.BACKUP
         if options.log_level:
             snap.config.options.log_level = options.log_level
+        if options.outputformat != None:
+            snap.config.options.outputformat = options.outputformat
         if options.snapfile != None:
             snap.config.options.snapfile = options.snapfile
         if options.encryption_password != None:
@@ -247,6 +256,9 @@ class Config:
             raise snap.exceptions.ArgError("Must specify backup or restore")
         if snap.config.options.snapfile == None: # need to specify snapfile location
             raise snap.exceptions.ArgError("Must specify snapfile")
+        # TODO verify output format is one of permitted types
+        if snap.config.options.outputformat == None: # need to specify output format
+            raise snap.exceptions.ArgError("Must specify valid output format")
 
 # static shared options
 options = ConfigOptions()

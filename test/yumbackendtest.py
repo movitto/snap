@@ -14,6 +14,7 @@
 # GNU General Public License for more details.
 
 import os
+import re
 import shutil
 import unittest
 
@@ -27,6 +28,7 @@ import snap.backends.packages.syum
 from snap.filemanager      import FileManager
 from snap.metadata.sfile   import FilesRecordFile
 from snap.metadata.package import PackagesRecordFile
+from snap.metadata.repo    import ReposRecordFile
 
 from snap.packageregistry  import PackageRegistry
 
@@ -54,6 +56,27 @@ class YumBackendTest(unittest.TestCase):
         for repo in os.listdir("/etc/yum.repos.d"):
             self.assertTrue(os.path.exists(self.fs_root + "/etc/yum.repos.d/" + repo))
 
+        repos = []
+        self.assertTrue(os.path.exists(self.fs_root + "/repos.xml"))
+        record = ReposRecordFile(self.fs_root + "/repos.xml")
+        record_repos = record.read()
+        for repo in record_repos:
+            repos.append(repo.url)
+
+        # verify repos contents
+        urls = []
+        for yum_repo in FileManager.get_all_files(include=['/etc/yum.repos.d']):
+            baseurl = re.compile('baseurl=(.*)\n')
+            mirrorlist = re.compile('mirrorlist=(.*)\n')
+            contents = FileManager.read_file(yum_repo)
+            for match in baseurl.findall(contents):
+                urls.append(match)
+            for match in mirrorlist.findall(contents):
+                urls.append(match)
+
+        for url in urls:
+            self.assertIn(url, repos)
+
 
     def testRestoreRepos(self):
         os.makedirs(self.basedir + "/etc/yum.repos.d")
@@ -63,11 +86,13 @@ class YumBackendTest(unittest.TestCase):
         f=open(self.basedir + "/etc/yum.repos.d/foo.repo" , 'w')
         f.write("bar")
         f.close()
+        f=open(self.basedir + "/repos.xml" , 'w')
+        f.write("<repos></repos>")
+        f.close()
 
         restore_target = snap.backends.repos.syum.Syum()
         restore_target.fs_root = self.fs_root
         restore_target.restore(self.basedir)
-
 
         self.assertTrue(os.path.exists(self.fs_root + "/etc/yum.conf"))
         self.assertTrue(os.path.exists(self.fs_root + "/etc/yum.repos.d/foo.repo"))

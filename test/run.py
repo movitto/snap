@@ -24,9 +24,11 @@ import callback
 import configtest
 import filemanagertest
 import packagemetadatatest
+import repometadatatest
 import servicesmetadatatest
 import sfilemetadatatest
 import snapfiletest
+import tdltest
 import osregistrytest
 import snaptest
 import servicedispatchertest
@@ -36,9 +38,11 @@ if __name__ == '__main__':
     suite.addTest(unittest.makeSuite(configtest.ConfigTest))
     suite.addTest(unittest.makeSuite(filemanagertest.FileManagerTest))
     suite.addTest(unittest.makeSuite(packagemetadatatest.PackageMetadataTest))
+    suite.addTest(unittest.makeSuite(repometadatatest.RepoMetadataTest))
     suite.addTest(unittest.makeSuite(servicesmetadatatest.ServicesMetadataTest))
     suite.addTest(unittest.makeSuite(sfilemetadatatest.SFileMetadataTest))
     suite.addTest(unittest.makeSuite(snapfiletest.SnapFileTest))
+    suite.addTest(unittest.makeSuite(tdltest.TDLFileTest))
     suite.addTest(unittest.makeSuite(osregistrytest.OsRegistryTest))
     suite.addTest(unittest.makeSuite(servicedispatchertest.ServiceDispatcherTest))
     suite.addTest(unittest.makeSuite(snaptest.SnapBaseTest))
