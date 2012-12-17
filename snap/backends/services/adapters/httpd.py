@@ -23,7 +23,7 @@ class Httpd:
 
     if OS.yum_based():
         DAEMON = 'httpd'
-        CONF_D = '/etc/httpd'
+        CONF_D = '/etc/httpd/conf.d'
         DOCUMENT_ROOT = '/var/www'
 
         # hack until we re-introduce package system abstraction:

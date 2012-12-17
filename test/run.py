@@ -13,6 +13,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+# !!!!!!!!!!!!!
+# Make sure to run the test suite as root
+# and that your system configuration matches
+# the config options specified in
+# test/data/config-test.snap.conf
+# !!!!!!!!!!!!!
+
 import unittest
 
 import sys

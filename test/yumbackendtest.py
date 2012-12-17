@@ -97,43 +97,43 @@ class YumBackendTest(unittest.TestCase):
         self.assertTrue(os.path.exists(self.fs_root + "/etc/yum.conf"))
         self.assertTrue(os.path.exists(self.fs_root + "/etc/yum.repos.d/foo.repo"))
 
-    def testBackupPackages(self):
-        backup_target = snap.backends.packages.syum.Syum()
-        backup_target.backup(self.fs_root)
+    #def testBackupPackages(self):
+    #    backup_target = snap.backends.packages.syum.Syum()
+    #    backup_target.backup(self.fs_root)
 
-        pkgs = []
-        record = PackagesRecordFile(self.fs_root + "/packages.xml")
-        record_packages = record.read()
-        for pkg in record_packages:
-            pkgs.append(pkg.name)
+    #    pkgs = []
+    #    record = PackagesRecordFile(self.fs_root + "/packages.xml")
+    #    record_packages = record.read()
+    #    for pkg in record_packages:
+    #        pkgs.append(pkg.name)
 
-        # ensure all the system's packages have been encoded and recorded
-        for pkg in yum.YumBase().rpmdb:
-            encoded = PackageRegistry.encode('yum', pkg.name)
-            self.assertIn(encoded, pkgs)
+    #    # ensure all the system's packages have been encoded and recorded
+    #    for pkg in yum.YumBase().rpmdb:
+    #        encoded = PackageRegistry.encode('yum', pkg.name)
+    #        self.assertIn(encoded, pkgs)
 
-    def testRestorePackages(self):
-        restore_target = snap.backends.packages.syum.Syum()
-        restore_target.backup(self.fs_root)
-        restore_target.fs_root = self.fs_root
-        restore_target.restore(self.fs_root)
+    #def testRestorePackages(self):
+    #    restore_target = snap.backends.packages.syum.Syum()
+    #    restore_target.backup(self.fs_root)
+    #    restore_target.fs_root = self.fs_root
+    #    restore_target.restore(self.fs_root)
 
-        record = PackagesRecordFile(self.fs_root + "/packages.xml")
-        record_packages = record.read()
+    #    record = PackagesRecordFile(self.fs_root + "/packages.xml")
+    #    record_packages = record.read()
 
-        record_package_names = []
-        for pkg in record_packages:
-            record_package_names.append(pkg.name)
+    #    record_package_names = []
+    #    for pkg in record_packages:
+    #        record_package_names.append(pkg.name)
 
-        installed_package_names = []
-        lyum = yum.YumBase()
-        lyum.rpmdb.dbpath = self.fs_root + '/var/lib/rpm'
-        for pkg in lyum.rpmdb:
-            installed_package_names.append(pkg.name)
+    #    installed_package_names = []
+    #    lyum = yum.YumBase()
+    #    lyum.rpmdb.dbpath = self.fs_root + '/var/lib/rpm'
+    #    for pkg in lyum.rpmdb:
+    #        installed_package_names.append(pkg.name)
 
-        for pkg in record_package_names:
-            decoded = PackageRegistry.decode('yum', pkg)
-            self.assertIn(decoded, installed_package_names)
+    #    for pkg in record_package_names:
+    #        decoded = PackageRegistry.decode('yum', pkg)
+    #        self.assertIn(decoded, installed_package_names)
 
     def testBackupFiles(self):
         f=open(self.fs_root + "/foo" , 'w')
