@@ -212,7 +212,7 @@ class Config:
         self.parser.add_option('', '--backup', dest='backup', action='store_true', default=False, help='Take snapshot')
         self.parser.add_option('-l', '--log-level', dest='log_level', action='store', default="normal", help='Log level (quiet, normal, verbose, debug)')
         self.parser.add_option('-o', '--outputformat', dest='outputformat', action='store', default=None, help='Output file format')
-        self.parser.add_option('-f', '--snapfile', dest='snapfile', action='store', default=None, help='Snapshot file')
+        self.parser.add_option('-f', '--snapfile', dest='snapfile', action='store', default=None, help='Snapshot file, use - for stdout')
         self.parser.add_option('-p', '--password', dest='encryption_password', action='store', default=None, help='Snapshot File Encryption/Decryption Password')
         # FIXME how to permit parameter lists for some of these
         for backend in SnapshotTarget.BACKENDS:

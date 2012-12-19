@@ -13,6 +13,7 @@
 # GNU General Public License for more details.
 
 import os
+import sys
 import tarfile
 
 import snap
@@ -63,8 +64,16 @@ class SnapFile:
 
         @raises - MissingFileError - if the snapfile cannot be created
         '''
+
+        # if snapfile == '-' write to stdout
+        snapfileo = None
+        if self.snapfile == '-':
+          snapfileo = sys.stdout
+        else:
+          snapfileo = open(self.snapfile, 'w')
+
         # create the tarball
-        tarball = tarfile.open(self.snapfile, "w:gz")
+        tarball = tarfile.open(fileobj=snapfileo, mode="w:gz")
 
         # temp store the working directory, before changing to the snapdirectory
         cwd = os.getcwd()
@@ -85,6 +94,8 @@ class SnapFile:
 
         # finish up tarball creation
         tarball.close()
+        if self.snapfile != '-':
+          snapfileo.close()
 
         # encrypt the snapshot if we've set a key
         if not snap.osregistry.OS.is_windows() and self.encryption_key != None:
@@ -112,8 +123,15 @@ class SnapFile:
             Crypto.decrypt_file(self.encryption_key, self.snapfile, self.snapfile + ".dec")
             FileManager.mv(self.snapfile + ".dec", self.snapfile)
 
+        # if snapfile == '-' read from stdin
+        snapfileo = None
+        if self.snapfile == '-':
+          snapfileo = sys.stdin
+        else:
+          snapfileo = open(self.snapfile, 'r')
+
         # open the tarball
-        tarball = tarfile.open(self.snapfile) 
+        tarball = tarfile.open(fileobj=snapfileo)
 
         # temp store the working directory, before changing to the snapdirectory
         cwd = os.getcwd()
@@ -125,6 +143,8 @@ class SnapFile:
 
         # close it out
         tarball.close()
+        if self.snapfile != '-':
+          snapfileo.close()
 
         if snap.config.options.log_level_at_least('normal'):
             snap.callback.snapcallback.message("Snapfile " + self.snapfile + " opened")
